@@ -1,0 +1,12 @@
+sounddevice
+faster-whisper>=1.1.0
+# PyAV 19 dropped an argument faster-whisper 1.2.1 still passes
+av<19
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+sqlalchemy>=2.0.30
+alembic>=1.13.0
+pydantic-settings>=2.2.0
+python-multipart>=0.0.9
+pytest>=8.2.0
+httpx>=0.27.0

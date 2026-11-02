@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetingFlow — AI Meeting Workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-wrap">
+          <div class="brand-mark">M</div>
+          <div>
+            <p class="brand-label">INTELLIGENCE</p>
+            <h2>MeetingFlow</h2>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active">
+            <span>Overview</span>
+            <small>Live</small>
+          </button>
+          <button class="nav-item">
+            <span>Recordings</span>
+            <small>12</small>
+          </button>
+          <button class="nav-item">
+            <span>Transcripts</span>
+            <small>48</small>
+          </button>
+          <button class="nav-item">
+            <span>Insights</span>
+            <small>AI</small>
+          </button>
+          <button class="nav-item">
+            <span>Settings</span>
+            <small>Ops</small>
+          </button>
+        </nav>
+
+        <div class="sidebar-card">
+          <p class="tiny-label">System status</p>
+          <div class="status-row">
+            <span class="dot green"></span>
+            <span>Capture ready</span>
+          </div>
+          <div class="status-row">
+            <span class="dot blue"></span>
+            <span>Whisper model loaded</span>
+          </div>
+          <div class="status-row">
+            <span class="dot amber"></span>
+            <span>4 devices detected</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Team workspace</p>
+            <h1>Meeting intelligence dashboard</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="secondary-btn">Export</button>
+            <label class="record-toggle" aria-label="toggle recording">
+              <span>Record</span>
+              <input type="checkbox" id="recordToggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </header>
+
+        <section class="stats-grid">
+          <article class="stat-card accent">
+            <div class="stat-icon icon-1">◉</div>
+            <div>
+              <p>Total sessions</p>
+              <h3>128</h3>
+            </div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon icon-2">◌</div>
+            <div>
+              <p>Minutes processed</p>
+              <h3>1,840</h3>
+            </div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon icon-3">✦</div>
+            <div>
+              <p>Languages</p>
+              <h3>7</h3>
+            </div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon icon-4">↗</div>
+            <div>
+              <p>Action items</p>
+              <h3>24</h3>
+            </div>
+          </article>
+        </section>
+
+        <section class="workspace-grid">
+          <article class="panel control-panel">
+            <div class="panel-head">
+              <div>
+                <p class="tiny-label">Capture controls</p>
+                <h3>Session setup</h3>
+              </div>
+              <span class="badge neutral" id="recordBadge">Idle</span>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Model</span>
+                <select id="modelSelect">
+                  <option value="tiny">tiny</option>
+                  <option value="base" selected>base</option>
+                  <option value="small">small</option>
+                  <option value="medium">medium</option>
+                  <option value="large-v3">large-v3</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Mic device</span>
+                <select id="micSelect">
+                  <option value="">Loading devices…</option>
+                </select>
+              </label>
+
+              <label>
+                <span>System audio</span>
+                <select id="systemSelect">
+                  <option value="">None (mic only)</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Language</span>
+                <select id="languageSelect">
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                  <option value="pa">Punjabi</option>
+                  <option value="">Multilingual</option>
+                </select>
+              </label>
+
+              <label class="full-width">
+                <span>Output directory</span>
+                <input type="text" value="./meetings" />
+              </label>
+
+              <label class="full-width">
+                <span>Prompt hint</span>
+                <textarea id="promptInput" rows="3" placeholder="Optional: names or terms used in the meeting, e.g. MeetingFlow, Kubernetes"></textarea>
+              </label>
+            </div>
+
+            <div class="actions-row">
+              <button class="secondary-btn">Preview</button>
+              <button class="primary-btn">Save config</button>
+            </div>
+          </article>
+
+          <article class="panel transcript-panel">
+            <div class="panel-head">
+              <div>
+                <p class="tiny-label">Current session</p>
+                <h3>Meeting transcript</h3>
+              </div>
+              <span class="badge neutral">12:48</span>
+            </div>
+
+            <div class="transcript-list" id="transcriptList"></div>
+          </article>
+        </section>
+
+        <section class="bottom-grid">
+          <article class="panel summary-panel">
+            <div class="panel-head">
+              <div>
+                <p class="tiny-label">AI summary</p>
+                <h3>Session insights</h3>
+              </div>
+            </div>
+
+            <ul class="summary-list">
+              <li>
+                <span class="summary-label">Decision</span>
+                <strong>Move the launch to the second week of November.</strong>
+              </li>
+              <li>
+                <span class="summary-label">Risk</span>
+                <strong>API latency remains above the target threshold for mobile devices.</strong>
+              </li>
+              <li>
+                <span class="summary-label">Owner</span>
+                <strong>Design + engineering to simplify the onboarding flow.</strong>
+              </li>
+            </ul>
+          </article>
+
+          <article class="panel activity-panel">
+            <div class="panel-head">
+              <div>
+                <p class="tiny-label">Recent work</p>
+                <h3>Sessions</h3>
+              </div>
+            </div>
+
+            <div class="session-list" id="sessionList"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

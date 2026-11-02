@@ -1,0 +1,21 @@
+# Frontend
+node_modules
+.next
+out
+npm-debug.log*
+*.tsbuildinfo
+.env.local
+
+# Backend
+.venv
+venv
+__pycache__
+.pytest_cache
+backend/.env
+backend/app.db
+backend/app.db.*
+backend/storage/uploads/*
+backend/storage/meetings/*
+
+.DS_Store
+_old
