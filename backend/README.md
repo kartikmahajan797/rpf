@@ -71,6 +71,13 @@ Sample data lives in `scripts/seed_data.json` (exported from `frontend/lib/mock-
 | GET/PATCH/DELETE | `/api/projects/{id}/requirements/{reqId}` | |
 | POST | `/api/projects/{id}/requirements/{reqId}/validate` `/approve` | status workflow |
 | POST | `/api/projects/{id}/requirements/bulk` | save the AI suggestions the user accepted |
+| GET | `/api/projects/{id}/analysis` | Business Analysis overview: state, gaps, stakeholders, process maps |
+| PUT | `/api/projects/{id}/analysis/state` | save current state / future state / objectives (partial) |
+| POST / PATCH / DELETE | `/api/projects/{id}/analysis/gaps[/{gapId}]` | gap analysis — codes GAP-001… never repeat; `requirementIds` must belong to the project |
+| POST | `/api/projects/{id}/analysis/gaps/bulk` | save the AI-suggested gaps the user accepted |
+| POST / PATCH / DELETE | `/api/projects/{id}/analysis/stakeholders[/{id}]` | influence / interest (high·medium·low), attitude |
+| POST / PATCH / DELETE | `/api/projects/{id}/analysis/processes[/{id}]` | as-is / to-be process maps with ordered steps |
+| POST | `/api/projects/{id}/analysis/suggest` | AI draft of state + gaps from requirements and meetings (not saved) |
 | GET | `/api/ai/status` | `{enabled, provider, model}` — frontend disables AI buttons when off |
 | POST | `/api/projects/{id}/sources/{sourceId}/extract-requirements` | AI suggestions (not saved) |
 | POST | `/api/meetings/{id}/extract-requirements` | AI suggestions from a transcript (not saved) |

@@ -17,7 +17,7 @@ Industry = Literal[
     "Public Sector",
     "Telecommunications",
 ]
-ActivityKind = Literal["upload", "requirement", "review", "document", "comment", "status", "project"]
+ActivityKind = Literal["upload", "requirement", "review", "document", "comment", "status", "project", "analysis"]
 SourceType = Literal["transcript", "rfp", "notes", "document", "spreadsheet"]
 ApprovalState = Literal["pending", "changes-requested"]
 RequirementPriority = Literal["must", "should", "could"]

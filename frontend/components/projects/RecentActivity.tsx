@@ -12,6 +12,7 @@ const KIND_ICON: Record<ActivityKind, IconName> = {
   comment: "message",
   status: "activity",
   project: "plus-square",
+  analysis: "chart",
 };
 
 export function RecentActivity({

@@ -17,7 +17,19 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from app.config import settings  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
-from app.models import Activity, Approval, Meeting, Project, Requirement, SourceDocument, TeamMember  # noqa: E402
+from app.models import (  # noqa: E402
+    Activity,
+    AnalysisGap,
+    Approval,
+    BusinessAnalysis,
+    Meeting,
+    ProcessMap,
+    Project,
+    Requirement,
+    SourceDocument,
+    Stakeholder,
+    TeamMember,
+)
 from app.services.meeting_service import sync_unassigned_meetings  # noqa: E402
 
 SEED_FILE = Path(__file__).with_name("seed_data.json")
@@ -28,7 +40,11 @@ def load_seed_data() -> dict:
 
 
 def clear_db(db: Session) -> None:
-    for model in (Activity, SourceDocument, Approval, Requirement, Meeting, Project, TeamMember):
+    for model in (
+        Activity, SourceDocument, Approval, Requirement, Meeting,
+        AnalysisGap, Stakeholder, ProcessMap, BusinessAnalysis,
+        Project, TeamMember,
+    ):
         db.query(model).delete()
 
 

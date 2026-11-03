@@ -43,6 +43,10 @@ class Project(Base):
     approvals: Mapped[list["Approval"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     sources: Mapped[list["SourceDocument"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     meetings: Mapped[list["Meeting"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    analysis: Mapped["BusinessAnalysis | None"] = relationship(back_populates="project", cascade="all, delete-orphan", uselist=False)
+    gaps: Mapped[list["AnalysisGap"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    stakeholders: Mapped[list["Stakeholder"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    process_maps: Mapped[list["ProcessMap"]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Activity(Base):
@@ -119,3 +123,70 @@ class Meeting(Base):
     summary: Mapped[dict | None] = mapped_column(MutableDict.as_mutable(JSON), nullable=True)
 
     project: Mapped[Project | None] = relationship(back_populates="meetings")
+
+
+# ─────────────────────────────── Business Analysis ─────────────────────────
+
+
+class BusinessAnalysis(Base):
+    """One per project: the narrative current state / future state / objectives."""
+
+    __tablename__ = "business_analyses"
+
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), primary_key=True)
+    current_state: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    future_state: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    objectives: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Highest GAP-nnn number ever issued, so codes are never reused after a delete.
+    last_gap_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    project: Mapped[Project] = relationship(back_populates="analysis")
+
+
+class AnalysisGap(Base):
+    __tablename__ = "analysis_gaps"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    area: Mapped[str] = mapped_column(String(255), nullable=False)
+    current: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    target: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    impact: Mapped[str] = mapped_column(String(16), nullable=False, default="medium")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="open")
+    requirement_ids: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+
+    project: Mapped[Project] = relationship(back_populates="gaps")
+
+
+class Stakeholder(Base):
+    __tablename__ = "stakeholders"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    organization: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    influence: Mapped[str] = mapped_column(String(16), nullable=False, default="medium")
+    interest: Mapped[str] = mapped_column(String(16), nullable=False, default="medium")
+    attitude: Mapped[str] = mapped_column(String(16), nullable=False, default="neutral")
+    notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    project: Mapped[Project] = relationship(back_populates="stakeholders")
+
+
+class ProcessMap(Base):
+    __tablename__ = "process_maps"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False, default="as-is")
+    # [{"actor": str, "action": str, "painPoint": str}]
+    steps: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+    notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+
+    project: Mapped[Project] = relationship(back_populates="process_maps")

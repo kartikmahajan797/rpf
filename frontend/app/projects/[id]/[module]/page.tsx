@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { AnalysisModule } from "@/components/analysis/AnalysisModule";
 import { MeetingsModule } from "@/components/meetings/MeetingsModule";
 import { RequirementsModule } from "@/components/requirements/RequirementsModule";
 import { SourcesModule } from "@/components/sources/SourcesModule";
@@ -42,6 +43,8 @@ export default function WorkflowModulePage() {
         return <MeetingsModule project={project} />;
       case "requirements":
         return <RequirementsModule project={project} />;
+      case "analysis":
+        return <AnalysisModule project={project} />;
       default:
         return (
           <Card>
@@ -60,7 +63,7 @@ export default function WorkflowModulePage() {
     }
   };
 
-  const isImplemented = module === "sources" || module === "meetings";
+  const isImplemented = ["sources", "meetings", "requirements", "analysis"].includes(module);
 
   return (
     <>

@@ -1,11 +1,27 @@
-from .project import Activity, Approval, Meeting, Project, Requirement, SourceDocument, TeamMember
+from .project import (
+    Activity,
+    AnalysisGap,
+    Approval,
+    BusinessAnalysis,
+    Meeting,
+    ProcessMap,
+    Project,
+    Requirement,
+    SourceDocument,
+    Stakeholder,
+    TeamMember,
+)
 
 __all__ = [
     "Activity",
+    "AnalysisGap",
     "Approval",
+    "BusinessAnalysis",
     "Meeting",
+    "ProcessMap",
     "Project",
     "Requirement",
     "SourceDocument",
+    "Stakeholder",
     "TeamMember",
 ]

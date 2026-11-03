@@ -1,5 +1,15 @@
 import type {
   Activity,
+  AnalysisGap,
+  AnalysisOverview,
+  AnalysisState,
+  AnalysisStateInput,
+  AnalysisSuggestion,
+  GapInput,
+  ProcessMap,
+  ProcessMapInput,
+  Stakeholder,
+  StakeholderInput,
   Approval,
   DeviceInfo,
   Meeting,
@@ -127,6 +137,32 @@ export const api = {
   aiStatus: () => apiFetch<{ enabled: boolean; provider: string | null; model: string | null }>(`/api/ai/status`),
   summarizeMeeting: (meetingId: string) =>
     apiFetch<MeetingSummary>(`/api/meetings/${meetingId}/summarize`, { method: "POST" }),
+  // Business Analysis
+  getAnalysis: (projectId: string) => apiFetch<AnalysisOverview>(`/api/projects/${projectId}/analysis`),
+  saveAnalysisState: (projectId: string, input: AnalysisStateInput) =>
+    apiFetch<AnalysisState>(`/api/projects/${projectId}/analysis/state`, { method: "PUT", body: JSON.stringify(input) }),
+  suggestAnalysis: (projectId: string) =>
+    apiFetch<AnalysisSuggestion>(`/api/projects/${projectId}/analysis/suggest`, { method: "POST" }),
+  createGap: (projectId: string, input: GapInput) =>
+    apiFetch<AnalysisGap>(`/api/projects/${projectId}/analysis/gaps`, { method: "POST", body: JSON.stringify(input) }),
+  bulkCreateGaps: (projectId: string, items: GapInput[]) =>
+    apiFetch<AnalysisGap[]>(`/api/projects/${projectId}/analysis/gaps/bulk`, { method: "POST", body: JSON.stringify(items) }),
+  patchGap: (projectId: string, gapId: string, patch: Partial<GapInput>) =>
+    apiFetch<AnalysisGap>(`/api/projects/${projectId}/analysis/gaps/${gapId}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteGap: (projectId: string, gapId: string) =>
+    apiFetch<void>(`/api/projects/${projectId}/analysis/gaps/${gapId}`, { method: "DELETE" }),
+  createStakeholder: (projectId: string, input: StakeholderInput) =>
+    apiFetch<Stakeholder>(`/api/projects/${projectId}/analysis/stakeholders`, { method: "POST", body: JSON.stringify(input) }),
+  patchStakeholder: (projectId: string, id: string, patch: Partial<StakeholderInput>) =>
+    apiFetch<Stakeholder>(`/api/projects/${projectId}/analysis/stakeholders/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteStakeholder: (projectId: string, id: string) =>
+    apiFetch<void>(`/api/projects/${projectId}/analysis/stakeholders/${id}`, { method: "DELETE" }),
+  createProcess: (projectId: string, input: ProcessMapInput) =>
+    apiFetch<ProcessMap>(`/api/projects/${projectId}/analysis/processes`, { method: "POST", body: JSON.stringify(input) }),
+  patchProcess: (projectId: string, id: string, patch: Partial<ProcessMapInput>) =>
+    apiFetch<ProcessMap>(`/api/projects/${projectId}/analysis/processes/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteProcess: (projectId: string, id: string) =>
+    apiFetch<void>(`/api/projects/${projectId}/analysis/processes/${id}`, { method: "DELETE" }),
   listApprovals: (projectId: string) => apiFetch<Approval[]>(`/api/projects/${projectId}/approvals`),
   listTeam: () => apiFetch<TeamMember[]>(`/api/team`),
   resetSampleData: () => apiFetch<Record<string, number>>(`/api/admin/reset-sample-data`, { method: "POST" }),

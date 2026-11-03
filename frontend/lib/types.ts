@@ -53,7 +53,7 @@ export interface Project {
   };
 }
 
-export type ActivityKind = "upload" | "requirement" | "review" | "document" | "comment" | "status" | "project";
+export type ActivityKind = "upload" | "requirement" | "review" | "document" | "comment" | "status" | "project" | "analysis";
 
 export interface Activity {
   id: string;
@@ -189,4 +189,82 @@ export interface NewProjectInput {
   ownerId: string;
   description: string;
   status: ProjectStatus;
+}
+
+// ─── Business Analysis ───────────────────────────────────────────────────────
+
+export type Level = "high" | "medium" | "low";
+export type GapStatus = "open" | "in-progress" | "closed";
+export type StakeholderAttitude = "champion" | "supporter" | "neutral" | "resistant";
+export type ProcessKind = "as-is" | "to-be";
+
+export interface AnalysisState {
+  projectId: string;
+  currentState: string;
+  futureState: string;
+  objectives: string;
+  updatedAt: string | null;
+}
+
+export type AnalysisStateInput = Partial<Pick<AnalysisState, "currentState" | "futureState" | "objectives">>;
+
+export interface AnalysisGap {
+  id: string;
+  projectId: string;
+  code: string;
+  area: string;
+  current: string;
+  target: string;
+  description: string;
+  impact: Level;
+  status: GapStatus;
+  requirementIds: string[];
+}
+
+export type GapInput = Omit<AnalysisGap, "id" | "projectId" | "code">;
+
+export interface Stakeholder {
+  id: string;
+  projectId: string;
+  name: string;
+  role: string;
+  organization: string;
+  influence: Level;
+  interest: Level;
+  attitude: StakeholderAttitude;
+  notes: string;
+}
+
+export type StakeholderInput = Omit<Stakeholder, "id" | "projectId">;
+
+export interface ProcessStep {
+  actor: string;
+  action: string;
+  painPoint: string;
+}
+
+export interface ProcessMap {
+  id: string;
+  projectId: string;
+  name: string;
+  kind: ProcessKind;
+  steps: ProcessStep[];
+  notes: string;
+  updatedAt: string;
+}
+
+export type ProcessMapInput = Omit<ProcessMap, "id" | "projectId" | "updatedAt">;
+
+export interface AnalysisOverview {
+  state: AnalysisState;
+  gaps: AnalysisGap[];
+  stakeholders: Stakeholder[];
+  processMaps: ProcessMap[];
+}
+
+export interface AnalysisSuggestion {
+  currentState: string;
+  futureState: string;
+  objectives: string;
+  gaps: Pick<AnalysisGap, "area" | "current" | "target" | "description" | "impact">[];
 }
