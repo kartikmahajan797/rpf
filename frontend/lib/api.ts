@@ -12,6 +12,22 @@ import type {
   StakeholderInput,
   Approval,
   DeviceInfo,
+  ComponentInput,
+  DecisionInput,
+  DesignDecision,
+  Integration,
+  IntegrationInput,
+  SolutionComponent,
+  SolutionDesign,
+  SolutionDesignInput,
+  SolutionOverview,
+  SolutionSuggestion,
+  Backlog,
+  BacklogSuggestion,
+  Epic,
+  EpicInput,
+  StoryInput,
+  UserStory,
   DocumentKind,
   DocumentUpdateInput,
   ProjectDocument,
@@ -185,6 +201,49 @@ export const api = {
   documentAction: (projectId: string, docId: string, action: "submit" | "approve" | "request-changes") =>
     apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}/${action}`, { method: "POST" }),
   exportDocumentUrl: (projectId: string, docId: string) => `${API_BASE_URL}/api/projects/${projectId}/documents/${docId}/export`,
+  // User stories
+  getBacklog: (projectId: string) => apiFetch<Backlog>(`/api/projects/${projectId}/stories`),
+  createEpic: (projectId: string, input: EpicInput) =>
+    apiFetch<Epic>(`/api/projects/${projectId}/stories/epics`, { method: "POST", body: JSON.stringify(input) }),
+  patchEpic: (projectId: string, id: string, patch: Partial<EpicInput>) =>
+    apiFetch<Epic>(`/api/projects/${projectId}/stories/epics/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteEpic: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/stories/epics/${id}`, { method: "DELETE" }),
+  createStory: (projectId: string, input: StoryInput) =>
+    apiFetch<UserStory>(`/api/projects/${projectId}/stories`, { method: "POST", body: JSON.stringify(input) }),
+  patchStory: (projectId: string, id: string, patch: Partial<StoryInput>) =>
+    apiFetch<UserStory>(`/api/projects/${projectId}/stories/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteStory: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/stories/${id}`, { method: "DELETE" }),
+  storiesFromRequirements: (projectId: string) =>
+    apiFetch<Backlog>(`/api/projects/${projectId}/stories/from-requirements`, { method: "POST" }),
+  bulkCreateStories: (projectId: string, groups: { title: string | null; description: string; stories: Partial<StoryInput>[] }[]) =>
+    apiFetch<Backlog>(`/api/projects/${projectId}/stories/bulk`, { method: "POST", body: JSON.stringify({ groups }) }),
+  suggestStories: (projectId: string) => apiFetch<BacklogSuggestion>(`/api/projects/${projectId}/stories/suggest`, { method: "POST" }),
+  exportStoriesUrl: (projectId: string) => `${API_BASE_URL}/api/projects/${projectId}/stories/export`,
+  // Solution design
+  getSolution: (projectId: string) => apiFetch<SolutionOverview>(`/api/projects/${projectId}/solution`),
+  saveSolutionDesign: (projectId: string, input: SolutionDesignInput) =>
+    apiFetch<SolutionDesign>(`/api/projects/${projectId}/solution/design`, { method: "PUT", body: JSON.stringify(input) }),
+  createComponent: (projectId: string, input: ComponentInput) =>
+    apiFetch<SolutionComponent>(`/api/projects/${projectId}/solution/components`, { method: "POST", body: JSON.stringify(input) }),
+  patchComponent: (projectId: string, id: string, patch: Partial<ComponentInput>) =>
+    apiFetch<SolutionComponent>(`/api/projects/${projectId}/solution/components/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteComponent: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/solution/components/${id}`, { method: "DELETE" }),
+  createIntegration: (projectId: string, input: IntegrationInput) =>
+    apiFetch<Integration>(`/api/projects/${projectId}/solution/integrations`, { method: "POST", body: JSON.stringify(input) }),
+  patchIntegration: (projectId: string, id: string, patch: Partial<IntegrationInput>) =>
+    apiFetch<Integration>(`/api/projects/${projectId}/solution/integrations/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteIntegration: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/solution/integrations/${id}`, { method: "DELETE" }),
+  integrationsFromRequirements: (projectId: string) =>
+    apiFetch<Integration[]>(`/api/projects/${projectId}/solution/integrations/from-requirements`, { method: "POST" }),
+  createDecision: (projectId: string, input: DecisionInput) =>
+    apiFetch<DesignDecision>(`/api/projects/${projectId}/solution/decisions`, { method: "POST", body: JSON.stringify(input) }),
+  patchDecision: (projectId: string, id: string, patch: Partial<DecisionInput>) =>
+    apiFetch<DesignDecision>(`/api/projects/${projectId}/solution/decisions/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteDecision: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/solution/decisions/${id}`, { method: "DELETE" }),
+  bulkCreateSolution: (projectId: string, input: { components: ComponentInput[]; integrations: IntegrationInput[]; decisions: DecisionInput[] }) =>
+    apiFetch<SolutionOverview>(`/api/projects/${projectId}/solution/bulk`, { method: "POST", body: JSON.stringify(input) }),
+  suggestSolution: (projectId: string) => apiFetch<SolutionSuggestion>(`/api/projects/${projectId}/solution/suggest`, { method: "POST" }),
+  exportSolutionUrl: (projectId: string) => `${API_BASE_URL}/api/projects/${projectId}/solution/export`,
   listApprovals: (projectId: string) => apiFetch<Approval[]>(`/api/projects/${projectId}/approvals`),
   listTeam: () => apiFetch<TeamMember[]>(`/api/team`),
   resetSampleData: () => apiFetch<Record<string, number>>(`/api/admin/reset-sample-data`, { method: "POST" }),

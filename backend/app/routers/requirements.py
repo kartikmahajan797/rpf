@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import Activity, AnalysisGap, Meeting, Requirement, SourceDocument
+from ..models import Activity, AnalysisGap, Meeting, Requirement, Integration, SolutionComponent, SourceDocument, UserStory
 from ..schemas.project import RequirementCreate, RequirementRead, RequirementUpdate
 from ..services.llm import LLMError, call_llm, llm_enabled, llm_status
 from .projects import get_project_or_404
@@ -252,6 +252,10 @@ def delete_requirement(project_id: str, req_id: str, db: Session = Depends(get_d
     for gap in db.query(AnalysisGap).filter(AnalysisGap.project_id == project_id):
         if req_id in (gap.requirement_ids or []):
             gap.requirement_ids = [rid for rid in gap.requirement_ids if rid != req_id]
+    for model in (UserStory, SolutionComponent, Integration):
+        for row in db.query(model).filter(model.project_id == project_id):
+            if req_id in (row.requirement_ids or []):
+                row.requirement_ids = [rid for rid in row.requirement_ids if rid != req_id]
     project.counts["requirements"] = max(0, project.counts.get("requirements", 1) - 1)
     project.updated_at = now
     db.add(Activity(

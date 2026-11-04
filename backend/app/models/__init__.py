@@ -1,8 +1,14 @@
 from .project import (
+    DesignDecision,
+    Integration,
+    SolutionComponent,
+    SolutionDesign,
     Activity,
     AnalysisGap,
     Approval,
+    BacklogMeta,
     BusinessAnalysis,
+    Epic,
     Meeting,
     ProcessMap,
     Project,
@@ -11,13 +17,20 @@ from .project import (
     SourceDocument,
     Stakeholder,
     TeamMember,
+    UserStory,
 )
 
 __all__ = [
+    "DesignDecision",
+    "Integration",
+    "SolutionComponent",
+    "SolutionDesign",
     "Activity",
     "AnalysisGap",
     "Approval",
+    "BacklogMeta",
     "BusinessAnalysis",
+    "Epic",
     "Meeting",
     "ProcessMap",
     "Project",
@@ -26,4 +39,5 @@ __all__ = [
     "SourceDocument",
     "Stakeholder",
     "TeamMember",
+    "UserStory",
 ]

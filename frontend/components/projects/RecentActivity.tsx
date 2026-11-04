@@ -13,6 +13,7 @@ const KIND_ICON: Record<ActivityKind, IconName> = {
   status: "activity",
   project: "plus-square",
   analysis: "chart",
+  story: "book",
 };
 
 export function RecentActivity({

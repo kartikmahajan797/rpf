@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AnalysisModule } from "@/components/analysis/AnalysisModule";
 import { DocumentsModule } from "@/components/documents/DocumentsModule";
+import { SolutionModule } from "@/components/solution/SolutionModule";
+import { StoriesModule } from "@/components/stories/StoriesModule";
 import { MeetingsModule } from "@/components/meetings/MeetingsModule";
 import { RequirementsModule } from "@/components/requirements/RequirementsModule";
 import { SourcesModule } from "@/components/sources/SourcesModule";
@@ -48,6 +50,10 @@ export default function WorkflowModulePage() {
         return <AnalysisModule project={project} />;
       case "documents":
         return <DocumentsModule project={project} />;
+      case "user-stories":
+        return <StoriesModule project={project} />;
+      case "solution":
+        return <SolutionModule project={project} />;
       default:
         return (
           <Card>
@@ -66,7 +72,7 @@ export default function WorkflowModulePage() {
     }
   };
 
-  const isImplemented = ["sources", "meetings", "requirements", "analysis", "documents"].includes(module);
+  const isImplemented = ["sources", "meetings", "requirements", "analysis", "documents", "user-stories", "solution"].includes(module);
 
   return (
     <>

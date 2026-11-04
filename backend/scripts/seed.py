@@ -18,10 +18,16 @@ from sqlalchemy.orm import Session  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.models import (  # noqa: E402
+    DesignDecision,
+    Integration,
+    SolutionComponent,
+    SolutionDesign,
     Activity,
     AnalysisGap,
     Approval,
+    BacklogMeta,
     BusinessAnalysis,
+    Epic,
     Meeting,
     ProcessMap,
     Project,
@@ -30,6 +36,7 @@ from app.models import (  # noqa: E402
     SourceDocument,
     Stakeholder,
     TeamMember,
+    UserStory,
 )
 from app.services.meeting_service import sync_unassigned_meetings  # noqa: E402
 
@@ -43,7 +50,8 @@ def load_seed_data() -> dict:
 def clear_db(db: Session) -> None:
     for model in (
         Activity, SourceDocument, Approval, Requirement, Meeting,
-        ProjectDocument, AnalysisGap, Stakeholder, ProcessMap, BusinessAnalysis,
+        DesignDecision, Integration, SolutionComponent, SolutionDesign,
+        UserStory, Epic, BacklogMeta, ProjectDocument, AnalysisGap, Stakeholder, ProcessMap, BusinessAnalysis,
         Project, TeamMember,
     ):
         db.query(model).delete()

@@ -48,6 +48,13 @@ class Project(Base):
     stakeholders: Mapped[list["Stakeholder"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     process_maps: Mapped[list["ProcessMap"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     documents: Mapped[list["ProjectDocument"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    backlog: Mapped["BacklogMeta | None"] = relationship(back_populates="project", cascade="all, delete-orphan", uselist=False)
+    epics: Mapped[list["Epic"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    stories: Mapped[list["UserStory"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    solution: Mapped["SolutionDesign | None"] = relationship(back_populates="project", cascade="all, delete-orphan", uselist=False)
+    components: Mapped[list["SolutionComponent"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    integrations: Mapped[list["Integration"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    decisions: Mapped[list["DesignDecision"]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Activity(Base):
@@ -217,3 +224,125 @@ class ProjectDocument(Base):
     approved_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     project: Mapped[Project] = relationship(back_populates="documents")
+
+
+# ─────────────────────────────── User stories ──────────────────────────────
+
+
+class BacklogMeta(Base):
+    """One per project: highest EPIC-/US- numbers issued, so codes are never reused after a delete."""
+
+    __tablename__ = "backlog_meta"
+
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), primary_key=True)
+    last_epic_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_story_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    project: Mapped[Project] = relationship(back_populates="backlog")
+
+
+class Epic(Base):
+    __tablename__ = "epics"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    project: Mapped[Project] = relationship(back_populates="epics")
+
+
+class UserStory(Base):
+    __tablename__ = "user_stories"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    # Plain column (no FK) so deleting an epic simply leaves its stories unassigned.
+    epic_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    persona: Mapped[str] = mapped_column(String(255), nullable=False, default="")  # "As a …"
+    goal: Mapped[str] = mapped_column(Text, nullable=False, default="")  # "I want …"
+    benefit: Mapped[str] = mapped_column(Text, nullable=False, default="")  # "so that …"
+    acceptance_criteria: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+    priority: Mapped[str] = mapped_column(String(16), nullable=False, default="should")
+    story_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="backlog")
+    requirement_ids: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+
+    project: Mapped[Project] = relationship(back_populates="stories")
+
+
+# ─────────────────────────────── Solution design ───────────────────────────
+
+
+class SolutionDesign(Base):
+    """One per project: the narrative technical approach."""
+
+    __tablename__ = "solution_designs"
+
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), primary_key=True)
+    overview: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    hosting: Mapped[str] = mapped_column(String(32), nullable=False, default="tbd")  # cloud | on-premise | hybrid | saas | tbd
+    architecture_style: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    technical_approach: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    nfr_approach: Mapped[str] = mapped_column(Text, nullable=False, default="")  # security, performance, availability…
+    updated_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Highest ADR-nnn number ever issued, so codes are never reused after a delete.
+    last_decision_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    project: Mapped[Project] = relationship(back_populates="solution")
+
+
+class SolutionComponent(Base):
+    __tablename__ = "solution_components"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    layer: Mapped[str] = mapped_column(String(32), nullable=False, default="service")  # channel | service | data | platform
+    technology: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    is_new: Mapped[bool] = mapped_column(nullable=False, default=True)  # new build vs existing system reused
+    requirement_ids: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+
+    project: Mapped[Project] = relationship(back_populates="components")
+
+
+class Integration(Base):
+    __tablename__ = "integrations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    external_system: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    direction: Mapped[str] = mapped_column(String(16), nullable=False, default="outbound")  # inbound | outbound | both
+    protocol: Mapped[str] = mapped_column(String(16), nullable=False, default="rest")  # rest | soap | event | file | database | other
+    frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="real-time")  # real-time | batch | on-demand
+    data: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="proposed")  # proposed | agreed
+    requirement_ids: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+
+    project: Mapped[Project] = relationship(back_populates="integrations")
+
+
+class DesignDecision(Base):
+    """An architecture decision record (ADR)."""
+
+    __tablename__ = "design_decisions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    context: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    decision: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    alternatives: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    consequences: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="proposed")  # proposed | accepted | rejected | superseded
+    updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+
+    project: Mapped[Project] = relationship(back_populates="decisions")

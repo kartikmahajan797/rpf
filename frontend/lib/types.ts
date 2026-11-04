@@ -53,7 +53,7 @@ export interface Project {
   };
 }
 
-export type ActivityKind = "upload" | "requirement" | "review" | "document" | "comment" | "status" | "project" | "analysis";
+export type ActivityKind = "upload" | "requirement" | "review" | "document" | "comment" | "status" | "project" | "analysis" | "story";
 
 export interface Activity {
   id: string;
@@ -302,4 +302,128 @@ export interface ProjectDocument extends ProjectDocumentSummary {
 export interface DocumentUpdateInput {
   title?: string;
   sections?: DocumentSection[];
+}
+
+// ─── User stories ────────────────────────────────────────────────────────────
+
+export type StoryPriority = "must" | "should" | "could";
+export type StoryStatus = "backlog" | "ready" | "in-progress" | "done";
+
+export interface Epic {
+  id: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string;
+}
+
+export type EpicInput = Pick<Epic, "title" | "description">;
+
+export interface UserStory {
+  id: string;
+  projectId: string;
+  epicId: string | null;
+  code: string;
+  title: string;
+  persona: string;
+  goal: string;
+  benefit: string;
+  acceptanceCriteria: string[];
+  priority: StoryPriority;
+  storyPoints: number | null;
+  status: StoryStatus;
+  requirementIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type StoryInput = Omit<UserStory, "id" | "projectId" | "code" | "createdAt" | "updatedAt">;
+
+export interface Backlog {
+  epics: Epic[];
+  stories: UserStory[];
+}
+
+export type StorySuggestion = Omit<StoryInput, "epicId" | "status">;
+
+export interface BacklogSuggestion {
+  epics: { title: string; description: string; stories: StorySuggestion[] }[];
+}
+
+// ─── Solution design ─────────────────────────────────────────────────────────
+
+export type Hosting = "cloud" | "on-premise" | "hybrid" | "saas" | "tbd";
+export type ComponentLayer = "channel" | "service" | "data" | "platform";
+export type IntegrationDirection = "inbound" | "outbound" | "both";
+export type IntegrationProtocol = "rest" | "soap" | "event" | "file" | "database" | "other";
+export type IntegrationFrequency = "real-time" | "batch" | "on-demand";
+export type IntegrationStatus = "proposed" | "agreed";
+export type DecisionStatus = "proposed" | "accepted" | "rejected" | "superseded";
+
+export interface SolutionDesign {
+  projectId: string;
+  overview: string;
+  hosting: Hosting;
+  architectureStyle: string;
+  technicalApproach: string;
+  nfrApproach: string;
+  updatedAt: string | null;
+}
+
+export type SolutionDesignInput = Partial<Omit<SolutionDesign, "projectId" | "updatedAt">>;
+
+export interface SolutionComponent {
+  id: string;
+  projectId: string;
+  name: string;
+  layer: ComponentLayer;
+  technology: string;
+  description: string;
+  isNew: boolean;
+  requirementIds: string[];
+}
+
+export type ComponentInput = Omit<SolutionComponent, "id" | "projectId">;
+
+export interface Integration {
+  id: string;
+  projectId: string;
+  name: string;
+  externalSystem: string;
+  direction: IntegrationDirection;
+  protocol: IntegrationProtocol;
+  frequency: IntegrationFrequency;
+  data: string;
+  status: IntegrationStatus;
+  requirementIds: string[];
+}
+
+export type IntegrationInput = Omit<Integration, "id" | "projectId">;
+
+export interface DesignDecision {
+  id: string;
+  projectId: string;
+  code: string;
+  title: string;
+  context: string;
+  decision: string;
+  alternatives: string;
+  consequences: string;
+  status: DecisionStatus;
+  updatedAt: string;
+}
+
+export type DecisionInput = Omit<DesignDecision, "id" | "projectId" | "code" | "updatedAt">;
+
+export interface SolutionOverview {
+  design: SolutionDesign;
+  components: SolutionComponent[];
+  integrations: Integration[];
+  decisions: DesignDecision[];
+}
+
+export interface SolutionSuggestion extends Omit<SolutionDesign, "projectId" | "updatedAt"> {
+  components: ComponentInput[];
+  integrations: IntegrationInput[];
+  decisions: DecisionInput[];
 }
