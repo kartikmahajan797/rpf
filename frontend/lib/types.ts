@@ -268,3 +268,38 @@ export interface AnalysisSuggestion {
   objectives: string;
   gaps: Pick<AnalysisGap, "area" | "current" | "target" | "description" | "impact">[];
 }
+
+// ─── BRD / FRD documents ─────────────────────────────────────────────────────
+
+export type DocumentKind = "brd" | "frd";
+export type DocumentStatus = "draft" | "in-review" | "approved";
+
+export interface DocumentSection {
+  key: string;
+  title: string;
+  /** Markdown. */
+  body: string;
+}
+
+export interface ProjectDocumentSummary {
+  id: string;
+  projectId: string;
+  kind: DocumentKind;
+  title: string;
+  version: number;
+  status: DocumentStatus;
+  sectionCount: number;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt: string | null;
+  approvedBy: string | null;
+}
+
+export interface ProjectDocument extends ProjectDocumentSummary {
+  sections: DocumentSection[];
+}
+
+export interface DocumentUpdateInput {
+  title?: string;
+  sections?: DocumentSection[];
+}

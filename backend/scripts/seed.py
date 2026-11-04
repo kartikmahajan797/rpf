@@ -25,6 +25,7 @@ from app.models import (  # noqa: E402
     Meeting,
     ProcessMap,
     Project,
+    ProjectDocument,
     Requirement,
     SourceDocument,
     Stakeholder,
@@ -42,7 +43,7 @@ def load_seed_data() -> dict:
 def clear_db(db: Session) -> None:
     for model in (
         Activity, SourceDocument, Approval, Requirement, Meeting,
-        AnalysisGap, Stakeholder, ProcessMap, BusinessAnalysis,
+        ProjectDocument, AnalysisGap, Stakeholder, ProcessMap, BusinessAnalysis,
         Project, TeamMember,
     ):
         db.query(model).delete()

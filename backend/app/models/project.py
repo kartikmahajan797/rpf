@@ -47,6 +47,7 @@ class Project(Base):
     gaps: Mapped[list["AnalysisGap"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     stakeholders: Mapped[list["Stakeholder"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     process_maps: Mapped[list["ProcessMap"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    documents: Mapped[list["ProjectDocument"]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Activity(Base):
@@ -190,3 +191,29 @@ class ProcessMap(Base):
     updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
 
     project: Mapped[Project] = relationship(back_populates="process_maps")
+
+
+# ─────────────────────────────── BRD / FRD documents ───────────────────────
+
+
+class ProjectDocument(Base):
+    """A BRD or FRD assembled from the project's requirements and analysis, then edited by the analyst."""
+
+    __tablename__ = "project_documents"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(8), nullable=False)  # brd | frd
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")  # draft | in-review | approved
+    # [{"key": str, "title": str, "body": str (markdown)}]
+    sections: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+    # The Approval row raised when the document is submitted for review (removed once approved).
+    approval_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+    approved_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    project: Mapped[Project] = relationship(back_populates="documents")

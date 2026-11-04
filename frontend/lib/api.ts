@@ -12,6 +12,10 @@ import type {
   StakeholderInput,
   Approval,
   DeviceInfo,
+  DocumentKind,
+  DocumentUpdateInput,
+  ProjectDocument,
+  ProjectDocumentSummary,
   Meeting,
   MeetingSummary,
   MeetingStartInput,
@@ -163,6 +167,24 @@ export const api = {
     apiFetch<ProcessMap>(`/api/projects/${projectId}/analysis/processes/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteProcess: (projectId: string, id: string) =>
     apiFetch<void>(`/api/projects/${projectId}/analysis/processes/${id}`, { method: "DELETE" }),
+  // BRD / FRD documents
+  listDocuments: (projectId: string) => apiFetch<ProjectDocumentSummary[]>(`/api/projects/${projectId}/documents`),
+  getDocument: (projectId: string, docId: string) => apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}`),
+  createDocument: (projectId: string, input: { kind: DocumentKind; title?: string }) =>
+    apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(input) }),
+  patchDocument: (projectId: string, docId: string, patch: DocumentUpdateInput) =>
+    apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteDocument: (projectId: string, docId: string) =>
+    apiFetch<void>(`/api/projects/${projectId}/documents/${docId}`, { method: "DELETE" }),
+  refreshDocumentSection: (projectId: string, docId: string, key: string) =>
+    apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}/sections/${encodeURIComponent(key)}/refresh`, { method: "POST" }),
+  suggestDocumentSection: (projectId: string, docId: string, key: string) =>
+    apiFetch<{ key: string; body: string }>(`/api/projects/${projectId}/documents/${docId}/sections/${encodeURIComponent(key)}/suggest`, {
+      method: "POST",
+    }),
+  documentAction: (projectId: string, docId: string, action: "submit" | "approve" | "request-changes") =>
+    apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}/${action}`, { method: "POST" }),
+  exportDocumentUrl: (projectId: string, docId: string) => `${API_BASE_URL}/api/projects/${projectId}/documents/${docId}/export`,
   listApprovals: (projectId: string) => apiFetch<Approval[]>(`/api/projects/${projectId}/approvals`),
   listTeam: () => apiFetch<TeamMember[]>(`/api/team`),
   resetSampleData: () => apiFetch<Record<string, number>>(`/api/admin/reset-sample-data`, { method: "POST" }),
