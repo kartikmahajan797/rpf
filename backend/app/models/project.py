@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -55,6 +55,10 @@ class Project(Base):
     components: Mapped[list["SolutionComponent"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     integrations: Mapped[list["Integration"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     decisions: Mapped[list["DesignDecision"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    estimation: Mapped["EstimationSettings | None"] = relationship(back_populates="project", cascade="all, delete-orphan", uselist=False)
+    estimate_roles: Mapped[list["EstimateRole"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    estimate_items: Mapped[list["EstimateItem"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    handoff: Mapped["ProjectHandoff | None"] = relationship(back_populates="project", cascade="all, delete-orphan", uselist=False)
 
 
 class Activity(Base):
@@ -346,3 +350,94 @@ class DesignDecision(Base):
     updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
 
     project: Mapped[Project] = relationship(back_populates="decisions")
+
+
+# ─────────────────────────────── Estimation & pricing ──────────────────────
+
+
+class EstimationSettings(Base):
+    """One per project: the commercial terms applied to the estimate."""
+
+    __tablename__ = "estimation_settings"
+
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), primary_key=True)
+    currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")
+    commercial_model: Mapped[str] = mapped_column(String(32), nullable=False, default="tbd")  # tbd | fixed-price | time-and-materials | milestone
+    contingency_pct: Mapped[float] = mapped_column(Float, nullable=False, default=10)
+    discount_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    days_per_point: Mapped[float] = mapped_column(Float, nullable=False, default=1)  # used when sizing items from story points
+    assumptions: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Highest EST-nnn number ever issued, so codes are never reused after a delete.
+    last_item_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    project: Mapped[Project] = relationship(back_populates="estimation")
+
+
+class EstimateRole(Base):
+    """A role on the delivery team, with its client day rate."""
+
+    __tablename__ = "estimate_roles"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    day_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    headcount: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    project: Mapped[Project] = relationship(back_populates="estimate_roles")
+
+
+class EstimateItem(Base):
+    """A unit of work with a three-point effort estimate."""
+
+    __tablename__ = "estimate_items"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    phase: Mapped[str] = mapped_column(String(16), nullable=False, default="build")  # discovery | design | build | test | deploy | support
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # Plain columns (no FK): deleting a role or story just clears the link and keeps the estimate.
+    role_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    optimistic_days: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    likely_days: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    pessimistic_days: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    story_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    requirement_ids: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+
+    project: Mapped[Project] = relationship(back_populates="estimate_items")
+
+
+# ─────────────────────────────── Templates + handoff ───────────────────────
+
+
+class DocumentTemplate(Base):
+    """A reusable, organisation-wide outline for a BRD, FRD, proposal or deck."""
+
+    __tablename__ = "document_templates"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(8), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # [{"key": str, "title": str, "body": str}]; a blank standard section is filled from project data.
+    sections: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), nullable=False, default=list)
+    updated_at: Mapped[str] = mapped_column(String(64), nullable=False, default=utc_now_iso)
+
+
+class ProjectHandoff(Base):
+    """One per project: the handover to the delivery team."""
+
+    __tablename__ = "project_handoffs"
+
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), primary_key=True)
+    delivery_lead: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    start_date: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    handed_off_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    handed_off_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    project: Mapped[Project] = relationship(back_populates="handoff")

@@ -14,6 +14,10 @@ from .models import Project, TeamMember
 from .routers.admin import router as admin_router
 from .routers.analysis import router as analysis_router
 from .routers.documents import router as documents_router
+from .routers.estimation import router as estimation_router
+from .routers.handoff import router as handoff_router
+from .routers.templates import router as templates_router
+from .routers.traceability import router as traceability_router
 from .routers.solution import router as solution_router
 from .routers.stories import router as stories_router
 from .routers.meetings import router as meetings_router
@@ -59,6 +63,10 @@ app.include_router(analysis_router)
 app.include_router(documents_router)
 app.include_router(stories_router)
 app.include_router(solution_router)
+app.include_router(estimation_router)
+app.include_router(traceability_router)
+app.include_router(handoff_router)
+app.include_router(templates_router)
 app.include_router(admin_router)
 
 # Standalone meeting-recorder page (the original Flask UI), served at /recorder/

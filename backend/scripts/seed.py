@@ -18,6 +18,11 @@ from sqlalchemy.orm import Session  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.models import (  # noqa: E402
+    DocumentTemplate,
+    ProjectHandoff,
+    EstimateItem,
+    EstimateRole,
+    EstimationSettings,
     DesignDecision,
     Integration,
     SolutionComponent,
@@ -50,6 +55,7 @@ def load_seed_data() -> dict:
 def clear_db(db: Session) -> None:
     for model in (
         Activity, SourceDocument, Approval, Requirement, Meeting,
+        ProjectHandoff, DocumentTemplate, EstimateItem, EstimateRole, EstimationSettings,
         DesignDecision, Integration, SolutionComponent, SolutionDesign,
         UserStory, Epic, BacklogMeta, ProjectDocument, AnalysisGap, Stakeholder, ProcessMap, BusinessAnalysis,
         Project, TeamMember,

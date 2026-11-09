@@ -213,6 +213,32 @@ export function DocumentEditor({
           <Icon name="arrow-left" size={14} /> All documents
         </button>
         <div className="doc-topbar-actions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            title="Reuse this document's structure. Generated client content is left out."
+            disabled={!!busy}
+            onClick={async () => {
+              const name = window.prompt("Template name", doc.title);
+              if (!name?.trim()) return;
+              try {
+                await api.templateFromDocument(project.id, doc.id, name.trim());
+                window.alert("Template saved. Find it on the Templates page.");
+              } catch (err) {
+                setError(errorText(err, "Failed to save the template"));
+              }
+            }}
+          >
+            <Icon name="template" size={14} /> Save as template
+          </button>
+          {doc.kind === "deck" && (
+            <a className="btn btn-secondary btn-sm" href={api.exportDocumentPptxUrl(project.id, doc.id)} title={dirty ? "Exports the last saved version" : "Download as PowerPoint"}>
+              <Icon name="download" size={14} /> PowerPoint
+            </a>
+          )}
+          <a className="btn btn-secondary btn-sm" href={api.exportDocumentPdfUrl(project.id, doc.id)} title={dirty ? "Exports the last saved version" : "Download as PDF"}>
+            <Icon name="download" size={14} /> PDF
+          </a>
           <a className="btn btn-secondary btn-sm" href={api.exportDocumentUrl(project.id, doc.id)} title={dirty ? "Exports the last saved version" : undefined}>
             <Icon name="download" size={14} /> Markdown
           </a>

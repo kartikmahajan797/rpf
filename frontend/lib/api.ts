@@ -12,6 +12,18 @@ import type {
   StakeholderInput,
   Approval,
   DeviceInfo,
+  TraceabilityOverview,
+  DocumentSection,
+  DocumentTemplate,
+  HandoffOverview,
+  TemplateInput,
+  EstimateItem,
+  EstimateItemInput,
+  EstimateRole,
+  EstimateRoleInput,
+  EstimationOverview,
+  EstimationSettings,
+  EstimationSettingsInput,
   ComponentInput,
   DecisionInput,
   DesignDecision,
@@ -186,7 +198,7 @@ export const api = {
   // BRD / FRD documents
   listDocuments: (projectId: string) => apiFetch<ProjectDocumentSummary[]>(`/api/projects/${projectId}/documents`),
   getDocument: (projectId: string, docId: string) => apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}`),
-  createDocument: (projectId: string, input: { kind: DocumentKind; title?: string }) =>
+  createDocument: (projectId: string, input: { kind: DocumentKind; title?: string; templateId?: string }) =>
     apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(input) }),
   patchDocument: (projectId: string, docId: string, patch: DocumentUpdateInput) =>
     apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}`, { method: "PATCH", body: JSON.stringify(patch) }),
@@ -201,6 +213,8 @@ export const api = {
   documentAction: (projectId: string, docId: string, action: "submit" | "approve" | "request-changes") =>
     apiFetch<ProjectDocument>(`/api/projects/${projectId}/documents/${docId}/${action}`, { method: "POST" }),
   exportDocumentUrl: (projectId: string, docId: string) => `${API_BASE_URL}/api/projects/${projectId}/documents/${docId}/export`,
+  exportDocumentPptxUrl: (projectId: string, docId: string) => `${API_BASE_URL}/api/projects/${projectId}/documents/${docId}/export/pptx`,
+  exportDocumentPdfUrl: (projectId: string, docId: string) => `${API_BASE_URL}/api/projects/${projectId}/documents/${docId}/export/pdf`,
   // User stories
   getBacklog: (projectId: string) => apiFetch<Backlog>(`/api/projects/${projectId}/stories`),
   createEpic: (projectId: string, input: EpicInput) =>
@@ -244,6 +258,42 @@ export const api = {
     apiFetch<SolutionOverview>(`/api/projects/${projectId}/solution/bulk`, { method: "POST", body: JSON.stringify(input) }),
   suggestSolution: (projectId: string) => apiFetch<SolutionSuggestion>(`/api/projects/${projectId}/solution/suggest`, { method: "POST" }),
   exportSolutionUrl: (projectId: string) => `${API_BASE_URL}/api/projects/${projectId}/solution/export`,
+  // Templates
+  listTemplates: () => apiFetch<DocumentTemplate[]>(`/api/templates`),
+  templateOutlines: () => apiFetch<Record<string, DocumentSection[]>>(`/api/templates/outlines`),
+  createTemplate: (input: TemplateInput) => apiFetch<DocumentTemplate>(`/api/templates`, { method: "POST", body: JSON.stringify(input) }),
+  patchTemplate: (id: string, patch: Partial<Omit<TemplateInput, "kind">>) =>
+    apiFetch<DocumentTemplate>(`/api/templates/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteTemplate: (id: string) => apiFetch<void>(`/api/templates/${id}`, { method: "DELETE" }),
+  templateFromDocument: (projectId: string, documentId: string, name: string) =>
+    apiFetch<DocumentTemplate>(`/api/templates/from-document`, { method: "POST", body: JSON.stringify({ projectId, documentId, name }) }),
+  // Delivery handoff
+  getHandoff: (projectId: string) => apiFetch<HandoffOverview>(`/api/projects/${projectId}/handoff`),
+  saveHandoff: (projectId: string, input: { deliveryLead: string; startDate: string; notes: string }) =>
+    apiFetch<HandoffOverview>(`/api/projects/${projectId}/handoff`, { method: "PUT", body: JSON.stringify(input) }),
+  completeHandoff: (projectId: string) => apiFetch<HandoffOverview>(`/api/projects/${projectId}/handoff/complete`, { method: "POST" }),
+  reopenHandoff: (projectId: string) => apiFetch<HandoffOverview>(`/api/projects/${projectId}/handoff/reopen`, { method: "POST" }),
+  exportHandoffUrl: (projectId: string) => `${API_BASE_URL}/api/projects/${projectId}/handoff/export`,
+  // Traceability
+  getTraceability: (projectId: string) => apiFetch<TraceabilityOverview>(`/api/projects/${projectId}/traceability`),
+  exportTraceabilityUrl: (projectId: string) => `${API_BASE_URL}/api/projects/${projectId}/traceability/export`,
+  // Estimation & pricing
+  getEstimation: (projectId: string) => apiFetch<EstimationOverview>(`/api/projects/${projectId}/estimation`),
+  saveEstimationSettings: (projectId: string, input: EstimationSettingsInput) =>
+    apiFetch<EstimationSettings>(`/api/projects/${projectId}/estimation/settings`, { method: "PUT", body: JSON.stringify(input) }),
+  createEstimateRole: (projectId: string, input: EstimateRoleInput) =>
+    apiFetch<EstimateRole>(`/api/projects/${projectId}/estimation/roles`, { method: "POST", body: JSON.stringify(input) }),
+  patchEstimateRole: (projectId: string, id: string, patch: Partial<EstimateRoleInput>) =>
+    apiFetch<EstimateRole>(`/api/projects/${projectId}/estimation/roles/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteEstimateRole: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/estimation/roles/${id}`, { method: "DELETE" }),
+  createEstimateItem: (projectId: string, input: EstimateItemInput) =>
+    apiFetch<EstimateItem>(`/api/projects/${projectId}/estimation/items`, { method: "POST", body: JSON.stringify(input) }),
+  patchEstimateItem: (projectId: string, id: string, patch: Partial<EstimateItemInput>) =>
+    apiFetch<EstimateItem>(`/api/projects/${projectId}/estimation/items/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteEstimateItem: (projectId: string, id: string) => apiFetch<void>(`/api/projects/${projectId}/estimation/items/${id}`, { method: "DELETE" }),
+  estimateItemsFromStories: (projectId: string) =>
+    apiFetch<EstimateItem[]>(`/api/projects/${projectId}/estimation/items/from-stories`, { method: "POST" }),
+  exportEstimationUrl: (projectId: string) => `${API_BASE_URL}/api/projects/${projectId}/estimation/export`,
   listApprovals: (projectId: string) => apiFetch<Approval[]>(`/api/projects/${projectId}/approvals`),
   listTeam: () => apiFetch<TeamMember[]>(`/api/team`),
   resetSampleData: () => apiFetch<Record<string, number>>(`/api/admin/reset-sample-data`, { method: "POST" }),

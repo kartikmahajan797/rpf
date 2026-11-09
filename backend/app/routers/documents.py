@@ -1,4 +1,4 @@
-"""BRD / FRD documents: generated from project data, edited by the analyst, then reviewed and approved."""
+"""BRDs, FRDs, proposals and decks: generated from project data, edited by the analyst, then reviewed and approved."""
 
 from __future__ import annotations
 
@@ -10,9 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Activity, Approval, Project, ProjectDocument
+from ..models import Activity, Approval, DocumentTemplate, Project, ProjectDocument
 from ..schemas.document import DocumentCreate, DocumentRead, DocumentSummary, DocumentUpdate, SectionSuggestion
-from ..services.document_builder import KIND_LABEL, build_section, build_sections, load_context, to_markdown
+from ..services.doc_export import to_pdf, to_pptx
+from ..services.document_builder import KIND_LABEL, build_section, build_sections, load_context, sections_from_template, to_markdown
 from .analysis import build_suggest_context
 from .projects import CURRENT_USER_ID, get_project_or_404, utc_now_iso
 from .requirements import check_input_size, run_llm_json
@@ -108,9 +109,19 @@ def list_documents(project_id: str, db: Session = Depends(get_db)):
 
 @router.post("", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
 def create_document(project_id: str, payload: DocumentCreate, db: Session = Depends(get_db)):
-    """Create a BRD or FRD pre-filled from the project's requirements, analysis and meetings."""
+    """Create a document pre-filled from the project's data, optionally following a saved template."""
     project = get_project_or_404(db, project_id)
     now = utc_now_iso()
+    context = load_context(db, project)
+    if payload.template_id:
+        template = db.get(DocumentTemplate, payload.template_id)
+        if template is None:
+            raise HTTPException(status_code=422, detail="Unknown template")
+        if template.kind != payload.kind:
+            raise HTTPException(status_code=422, detail=f"This template is for a {template.kind.upper()}, not a {payload.kind.upper()}.")
+        sections = sections_from_template(context, payload.kind, template.sections or [])
+    else:
+        sections = build_sections(context, payload.kind)
     title = (payload.title or "").strip() or f"{project.name}: {KIND_LABEL[payload.kind]}"
     doc = ProjectDocument(
         id=f"doc-{uuid.uuid4().hex[:8]}",
@@ -119,7 +130,7 @@ def create_document(project_id: str, payload: DocumentCreate, db: Session = Depe
         title=title[:255],
         version=1,
         status="draft",
-        sections=build_sections(load_context(db, project), payload.kind),
+        sections=sections,
         created_at=now,
         updated_at=now,
     )
@@ -276,6 +287,28 @@ def export_document(project_id: str, doc_id: str, db: Session = Depends(get_db))
         media_type="text/markdown; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{slug}-v{doc.version}.md"'},
     )
+
+
+def _binary(doc: ProjectDocument, content: bytes, extension: str, media_type: str) -> Response:
+    slug = re.sub(r"[^a-z0-9]+", "-", doc.title.lower()).strip("-")[:80] or doc.kind
+    return Response(content=content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{slug}-v{doc.version}.{extension}"'})
+
+
+@router.get("/{doc_id}/export/pdf")
+def export_pdf(project_id: str, doc_id: str, db: Session = Depends(get_db)):
+    project = get_project_or_404(db, project_id)
+    doc = get_doc(db, project_id, doc_id)
+    return _binary(doc, to_pdf(doc, project), "pdf", "application/pdf")
+
+
+@router.get("/{doc_id}/export/pptx")
+def export_pptx(project_id: str, doc_id: str, db: Session = Depends(get_db)):
+    """PowerPoint download; one slide (or more, for long content) per section. Decks only."""
+    project = get_project_or_404(db, project_id)
+    doc = get_doc(db, project_id, doc_id)
+    if doc.kind != "deck":
+        raise HTTPException(status_code=422, detail="Only presentations can be exported to PowerPoint.")
+    return _binary(doc, to_pptx(doc, project), "pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
 
 
 SECTION_SYSTEM_PROMPT = (

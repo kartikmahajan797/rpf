@@ -271,7 +271,7 @@ export interface AnalysisSuggestion {
 
 // ─── BRD / FRD documents ─────────────────────────────────────────────────────
 
-export type DocumentKind = "brd" | "frd";
+export type DocumentKind = "brd" | "frd" | "proposal" | "deck";
 export type DocumentStatus = "draft" | "in-review" | "approved";
 
 export interface DocumentSection {
@@ -426,4 +426,143 @@ export interface SolutionSuggestion extends Omit<SolutionDesign, "projectId" | "
   components: ComponentInput[];
   integrations: IntegrationInput[];
   decisions: DecisionInput[];
+}
+
+// ─── Templates + handoff ─────────────────────────────────────────────────────
+
+export interface DocumentTemplate {
+  id: string;
+  kind: DocumentKind;
+  name: string;
+  description: string;
+  sections: DocumentSection[];
+  updatedAt: string;
+}
+
+export type TemplateInput = Omit<DocumentTemplate, "id" | "updatedAt">;
+
+export interface HandoffCheck {
+  key: string;
+  label: string;
+  detail: string;
+  passed: boolean;
+  required: boolean;
+}
+
+export interface HandoffOverview {
+  handoff: {
+    projectId: string;
+    deliveryLead: string;
+    startDate: string;
+    notes: string;
+    updatedAt: string | null;
+    handedOffAt: string | null;
+    handedOffBy: string | null;
+  };
+  checks: HandoffCheck[];
+  ready: boolean;
+}
+
+// ─── Traceability ────────────────────────────────────────────────────────────
+
+export interface TraceLink {
+  id: string;
+  label: string;
+  status: string;
+}
+
+export interface TraceRow {
+  id: string;
+  code: string;
+  title: string;
+  type: string;
+  priority: string;
+  status: string;
+  gaps: TraceLink[];
+  stories: TraceLink[];
+  components: TraceLink[];
+  integrations: TraceLink[];
+  estimateItems: TraceLink[];
+  documents: TraceLink[];
+  estimateDays: number;
+  estimateCost: number;
+  hasStory: boolean;
+  hasDesign: boolean;
+  hasEstimate: boolean;
+}
+
+export interface TraceabilityOverview {
+  currency: string;
+  rows: TraceRow[];
+  orphans: { kind: string; label: string }[];
+  summary: { total: number; fullyTraced: number; withoutStory: number; withoutDesign: number; withoutEstimate: number };
+}
+
+// ─── Estimation & pricing ────────────────────────────────────────────────────
+
+export type Currency = "USD" | "EUR" | "GBP" | "INR" | "AUD" | "CAD";
+export type CommercialModel = "tbd" | "fixed-price" | "time-and-materials" | "milestone";
+export type EstimatePhase = "discovery" | "design" | "build" | "test" | "deploy" | "support";
+
+export interface EstimationSettings {
+  projectId: string;
+  currency: Currency;
+  commercialModel: CommercialModel;
+  contingencyPct: number;
+  discountPct: number;
+  daysPerPoint: number;
+  assumptions: string;
+  updatedAt: string | null;
+}
+
+export type EstimationSettingsInput = Partial<Omit<EstimationSettings, "projectId" | "updatedAt">>;
+
+export interface EstimateRole {
+  id: string;
+  projectId: string;
+  name: string;
+  dayRate: number;
+  headcount: number;
+}
+
+export type EstimateRoleInput = Omit<EstimateRole, "id" | "projectId">;
+
+export interface EstimateItem {
+  id: string;
+  projectId: string;
+  code: string;
+  title: string;
+  phase: EstimatePhase;
+  description: string;
+  roleId: string | null;
+  optimisticDays: number;
+  likelyDays: number;
+  pessimisticDays: number;
+  storyId: string | null;
+  requirementIds: string[];
+  expectedDays: number;
+  cost: number;
+}
+
+export type EstimateItemInput = Omit<EstimateItem, "id" | "projectId" | "code" | "storyId" | "expectedDays" | "cost">;
+
+export interface EstimationSummary {
+  totalDays: number;
+  unassignedDays: number;
+  unestimatedItems: number;
+  durationWeeks: number;
+  blendedDayRate: number;
+  subtotal: number;
+  contingencyAmount: number;
+  discountAmount: number;
+  total: number;
+  byRole: { roleId: string; name: string; days: number; cost: number; weeks: number }[];
+  byPhase: { phase: EstimatePhase; days: number; cost: number }[];
+}
+
+export interface EstimationOverview {
+  settings: EstimationSettings;
+  roles: EstimateRole[];
+  items: EstimateItem[];
+  summary: EstimationSummary;
 }

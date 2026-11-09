@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Activity, BacklogMeta, Epic, Project, Requirement, UserStory
+from ..models import Activity, BacklogMeta, Epic, EstimateItem, Project, Requirement, UserStory
 from ..schemas.story import (
     STORY_POINTS,
     BacklogOverview,
@@ -240,6 +240,9 @@ def update_story(project_id: str, story_id: str, payload: StoryUpdate, db: Sessi
 def delete_story(project_id: str, story_id: str, db: Session = Depends(get_db)):
     project = get_project_or_404(db, project_id)
     story = get_owned(db, UserStory, story_id, project_id, "User story")
+    # The effort estimate stays; it just no longer points at a story.
+    for item in db.query(EstimateItem).filter(EstimateItem.project_id == project_id, EstimateItem.story_id == story_id):
+        item.story_id = None
     db.delete(story)
     sync_count(db, project)
     log(db, project, f"deleted user story {story.code}")

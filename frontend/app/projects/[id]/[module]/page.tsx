@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AnalysisModule } from "@/components/analysis/AnalysisModule";
 import { DocumentsModule } from "@/components/documents/DocumentsModule";
+import { EstimationModule } from "@/components/estimation/EstimationModule";
 import { SolutionModule } from "@/components/solution/SolutionModule";
 import { StoriesModule } from "@/components/stories/StoriesModule";
+import { HandoffModule } from "@/components/handoff/HandoffModule";
+import { TraceabilityModule } from "@/components/traceability/TraceabilityModule";
 import { MeetingsModule } from "@/components/meetings/MeetingsModule";
 import { RequirementsModule } from "@/components/requirements/RequirementsModule";
 import { SourcesModule } from "@/components/sources/SourcesModule";
@@ -54,6 +57,16 @@ export default function WorkflowModulePage() {
         return <StoriesModule project={project} />;
       case "solution":
         return <SolutionModule project={project} />;
+      case "proposals":
+        return <DocumentsModule project={project} kinds={["proposal"]} />;
+      case "presentations":
+        return <DocumentsModule project={project} kinds={["deck"]} />;
+      case "handoff":
+        return <HandoffModule project={project} />;
+      case "traceability":
+        return <TraceabilityModule project={project} />;
+      case "estimation":
+        return <EstimationModule project={project} />;
       default:
         return (
           <Card>
@@ -72,7 +85,7 @@ export default function WorkflowModulePage() {
     }
   };
 
-  const isImplemented = ["sources", "meetings", "requirements", "analysis", "documents", "user-stories", "solution"].includes(module);
+  const isImplemented = ["sources", "meetings", "requirements", "analysis", "documents", "user-stories", "solution", "estimation", "proposals", "presentations", "handoff", "traceability"].includes(module);
 
   return (
     <>

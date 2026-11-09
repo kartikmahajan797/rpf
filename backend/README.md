@@ -78,6 +78,18 @@ Sample data lives in `scripts/seed_data.json` (exported from `frontend/lib/mock-
 | POST / PATCH / DELETE | `/api/projects/{id}/analysis/stakeholders[/{id}]` | influence / interest (high·medium·low), attitude |
 | POST / PATCH / DELETE | `/api/projects/{id}/analysis/processes[/{id}]` | as-is / to-be process maps with ordered steps |
 | POST | `/api/projects/{id}/analysis/suggest` | AI draft of state + gaps from requirements and meetings (not saved) |
+| GET | `/api/projects/{id}/estimation` | Estimation overview: commercial terms, roles, effort items, calculated totals |
+| PUT | `/api/projects/{id}/estimation/settings` | currency, commercial model, contingency %, discount %, days per story point, assumptions (partial) |
+| POST / PATCH / DELETE | `/api/projects/{id}/estimation/roles[/{id}]` | team roles with day rate and headcount; deleting a role leaves its items unassigned |
+| POST / PATCH / DELETE | `/api/projects/{id}/estimation/items[/{id}]` | three-point effort items — codes EST-001… never repeat |
+| POST | `/api/projects/{id}/estimation/items/from-stories` | one item per user story without an estimate, sized from story points |
+| GET | `/api/projects/{id}/estimation/export` | estimate as Markdown |
+| GET | `/api/projects/{id}/traceability` `/traceability/export` | requirement links to gaps, stories, design, estimates and documents; CSV export |
+| GET / POST | `/api/projects/{id}/documents/{docId}/export/pdf` `/export/pptx` | PDF for any document; PowerPoint for presentations only (GET) |
+| GET / PUT | `/api/projects/{id}/handoff` | readiness checklist; delivery lead, start date, notes |
+| POST | `/api/projects/{id}/handoff/complete` `/reopen` | 409 until every required check passes |
+| GET | `/api/projects/{id}/handoff/export` | zip of all documents, backlog, design, estimate, traceability |
+| GET / POST / PATCH / DELETE | `/api/templates[/{id}]`, `/api/templates/outlines`, `POST /api/templates/from-document` | reusable document outlines |
 | GET | `/api/ai/status` | `{enabled, provider, model}` — frontend disables AI buttons when off |
 | POST | `/api/projects/{id}/sources/{sourceId}/extract-requirements` | AI suggestions (not saved) |
 | POST | `/api/meetings/{id}/extract-requirements` | AI suggestions from a transcript (not saved) |

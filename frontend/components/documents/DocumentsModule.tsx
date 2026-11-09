@@ -7,17 +7,20 @@ import { Card, EmptyState, RelativeTime, StatCard } from "@/components/ui/primit
 import { Badge } from "@/components/ui/StatusBadge";
 import { api } from "@/lib/api";
 import { useProjects } from "@/lib/projects-store";
-import type { DocumentKind, Project, ProjectDocumentSummary } from "@/lib/types";
+import type { DocumentKind, DocumentTemplate, Project, ProjectDocumentSummary } from "@/lib/types";
 import { DocumentEditor } from "./DocumentEditor";
 import { KIND_HINT, KIND_LABEL, KIND_LONG, STATUS_LABEL, statusTone } from "./shared";
 
-export function DocumentsModule({ project }: { project: Project }) {
+const REQUIREMENT_DOCS: DocumentKind[] = ["brd", "frd"];
+
+export function DocumentsModule({ project, kinds = REQUIREMENT_DOCS }: { project: Project; kinds?: DocumentKind[] }) {
   const { reload } = useProjects();
-  const [docs, setDocs] = useState<ProjectDocumentSummary[] | null>(null);
+  const [allDocs, setDocs] = useState<ProjectDocumentSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const [creating, setCreating] = useState<{ kind: DocumentKind; title: string } | null>(null);
+  const [creating, setCreating] = useState<{ kind: DocumentKind; title: string; templateId: string } | null>(null);
+  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [createError, setCreateError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -32,6 +35,7 @@ export function DocumentsModule({ project }: { project: Project }) {
 
   useEffect(() => {
     void load();
+    api.listTemplates().then(setTemplates).catch(() => setTemplates([]));
   }, [load]);
 
   const onChanged = useCallback(async () => {
@@ -44,7 +48,7 @@ export function DocumentsModule({ project }: { project: Project }) {
     setSaving(true);
     setCreateError(null);
     try {
-      const doc = await api.createDocument(project.id, { kind: creating.kind, title: creating.title.trim() || undefined });
+      const doc = await api.createDocument(project.id, { kind: creating.kind, title: creating.title.trim() || undefined, templateId: creating.templateId || undefined });
       setCreating(null);
       await onChanged();
       setOpenId(doc.id);
@@ -54,6 +58,11 @@ export function DocumentsModule({ project }: { project: Project }) {
       setSaving(false);
     }
   };
+
+  const docs = allDocs && allDocs.filter((d) => kinds.includes(d.kind));
+  const single = kinds.length === 1;
+  const noun = kinds[0] === "deck" ? "presentation" : "proposal";
+  const kindTemplates = creating ? templates.filter((t) => t.kind === creating.kind) : [];
 
   if (openId) {
     return (
@@ -81,7 +90,7 @@ export function DocumentsModule({ project }: { project: Project }) {
 
   const count = (pred: (d: ProjectDocumentSummary) => boolean) => docs.filter(pred).length;
   const openCreate = (kind: DocumentKind) => {
-    setCreating({ kind, title: "" });
+    setCreating({ kind, title: "", templateId: "" });
     setCreateError(null);
   };
 
@@ -90,34 +99,46 @@ export function DocumentsModule({ project }: { project: Project }) {
       <FormError message={error} />
 
       <div className="stats-grid">
-        <StatCard label="BRDs" value={count((d) => d.kind === "brd")} icon="file-text" hint="Business requirements" />
-        <StatCard label="FRDs" value={count((d) => d.kind === "frd")} icon="list-checks" hint="Functional requirements" />
+        {single ? (
+          <>
+            <StatCard label={`${noun[0].toUpperCase()}${noun.slice(1)}s`} value={docs.length} icon={noun === "presentation" ? "presentation" : "send"} hint="For this client" />
+            <StatCard label="Drafts" value={count((d) => d.status === "draft")} icon="pencil" hint="Still being written" />
+          </>
+        ) : (
+          <>
+            <StatCard label="BRDs" value={count((d) => d.kind === "brd")} icon="file-text" hint="Business requirements" />
+            <StatCard label="FRDs" value={count((d) => d.kind === "frd")} icon="list-checks" hint="Functional requirements" />
+          </>
+        )}
         <StatCard label="In review" value={count((d) => d.status === "in-review")} icon="clock" hint="Waiting for sign-off" />
         <StatCard label="Approved" value={count((d) => d.status === "approved")} icon="check-circle" hint="Signed off by the client" />
       </div>
 
       <Card
         flush
-        title={`Documents (${docs.length})`}
+        title={`${single ? `${noun[0].toUpperCase()}${noun.slice(1)}s` : "Documents"} (${docs.length})`}
         action={
           <div className="action-btn-group">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openCreate("frd")}>
-              <Icon name="plus" size={14} /> New FRD
-            </button>
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => openCreate("brd")}>
-              <Icon name="plus" size={14} /> New BRD
-            </button>
+            {[...kinds].reverse().map((k, i, list) => (
+              <button key={k} type="button" className={`btn btn-sm ${i === list.length - 1 ? "btn-primary" : "btn-secondary"}`} onClick={() => openCreate(k)}>
+                <Icon name="plus" size={14} /> New {single ? noun : KIND_LABEL[k]}
+              </button>
+            ))}
           </div>
         }
       >
         {docs.length === 0 ? (
           <EmptyState
             icon="file-text"
-            title="No documents yet"
-            description="Generate a BRD or FRD. It is pre-filled from this project's requirements, business analysis and meetings; you then edit, review and export it."
+            title={single ? `No ${noun}s yet` : "No documents yet"}
+            description={
+              single
+                ? `Generate a ${noun}. It is pre-filled from this project's requirements, solution design and estimate; you then edit, review and download it.`
+                : "Generate a BRD or FRD. It is pre-filled from this project's requirements, business analysis and meetings; you then edit, review and export it."
+            }
             action={
-              <button type="button" className="btn btn-primary" onClick={() => openCreate("brd")}>
-                <Icon name="plus" size={14} /> Generate BRD
+              <button type="button" className="btn btn-primary" onClick={() => openCreate(kinds[0])}>
+                <Icon name="plus" size={14} /> Generate {single ? noun : KIND_LABEL[kinds[0]]}
               </button>
             }
           />
@@ -160,6 +181,14 @@ export function DocumentsModule({ project }: { project: Project }) {
                         <button type="button" className="icon-action-btn" title="Open" onClick={() => setOpenId(d.id)}>
                           <Icon name="pencil" size={14} />
                         </button>
+                        {d.kind === "deck" && (
+                          <a className="icon-action-btn" title="Download PowerPoint" href={api.exportDocumentPptxUrl(project.id, d.id)}>
+                            <Icon name="presentation" size={14} />
+                          </a>
+                        )}
+                        <a className="icon-action-btn" title="Download PDF" href={api.exportDocumentPdfUrl(project.id, d.id)}>
+                          <Icon name="file-text" size={14} />
+                        </a>
                         <a className="icon-action-btn" title="Download Markdown" href={api.exportDocumentUrl(project.id, d.id)}>
                           <Icon name="download" size={14} />
                         </a>
@@ -191,12 +220,13 @@ export function DocumentsModule({ project }: { project: Project }) {
         >
           <FormError message={createError} />
           <div className="form-grid">
+            {kinds.length > 1 && (
             <div className="field span-2">
               <label>Document type</label>
               <div className="doc-kind-picker">
-                {(["brd", "frd"] as DocumentKind[]).map((k) => (
+                {kinds.map((k) => (
                   <label key={k} className={`doc-kind-option${creating.kind === k ? " is-selected" : ""}`}>
-                    <input type="radio" name="doc-kind" checked={creating.kind === k} onChange={() => setCreating({ ...creating, kind: k })} />
+                    <input type="radio" name="doc-kind" checked={creating.kind === k} onChange={() => setCreating({ ...creating, kind: k, templateId: "" })} />
                     <span>
                       <strong>{KIND_LONG[k]}</strong>
                       <span className="field-help">{KIND_HINT[k]}</span>
@@ -205,6 +235,20 @@ export function DocumentsModule({ project }: { project: Project }) {
                 ))}
               </div>
             </div>
+            )}
+            {kindTemplates.length > 0 && (
+              <div className="field span-2">
+                <label htmlFor="doc-template">Template</label>
+                <select id="doc-template" value={creating.templateId} onChange={(e) => setCreating({ ...creating, templateId: e.target.value })}>
+                  <option value="">Standard outline</option>
+                  {kindTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="field span-2">
               <label htmlFor="doc-title">Title</label>
               <input

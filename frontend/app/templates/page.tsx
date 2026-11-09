@@ -1,13 +1,13 @@
 "use client";
 
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { TemplatesManager } from "@/components/templates/TemplatesManager";
+import { PageHeader } from "@/components/ui/primitives";
 
 export default function TemplatesPage() {
   return (
-    <PlaceholderPage
-      title="Templates"
-      icon="template"
-      description="Reusable BRD, FRD, proposal and presentation templates for your organization."
-    />
+    <>
+      <PageHeader title="Templates" description="Reusable BRD, FRD, proposal and presentation outlines for your organization." />
+      <TemplatesManager />
+    </>
   );
 }

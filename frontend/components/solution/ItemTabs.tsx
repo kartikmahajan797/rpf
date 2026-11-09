@@ -38,7 +38,7 @@ import {
 type Common = { projectId: string; requirements: Requirement[]; onChanged: () => Promise<void> };
 
 /** Add/edit modal + delete confirm state shared by the three tabs. */
-function useEditor<T extends { id: string }, I>(empty: I, toInput: (item: T) => I) {
+export function useEditor<T extends { id: string }, I>(empty: I, toInput: (item: T) => I) {
   const [editing, setEditing] = useState<T | null>(null);
   const [form, setForm] = useState<I | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +100,7 @@ function useEditor<T extends { id: string }, I>(empty: I, toInput: (item: T) => 
   };
 }
 
-function EditModal({ title, subtitle, error, saving, onClose, onSave, children }: {
+export function EditModal({ title, subtitle, error, saving, onClose, onSave, children }: {
   title: string;
   subtitle: string;
   error: string | null;
@@ -132,7 +132,7 @@ function EditModal({ title, subtitle, error, saving, onClose, onSave, children }
   );
 }
 
-function Actions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+export function Actions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="action-btn-group" style={{ justifyContent: "flex-end" }}>
       <button type="button" className="icon-action-btn" title="Edit" onClick={onEdit}>
@@ -145,7 +145,7 @@ function Actions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
   );
 }
 
-function Select<T extends string>({ id, label, value, options, onChange }: { id: string; label: string; value: T; options: Record<T, string>; onChange: (v: T) => void }) {
+export function Select<T extends string>({ id, label, value, options, onChange }: { id: string; label: string; value: T; options: Record<T, string>; onChange: (v: T) => void }) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>

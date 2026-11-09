@@ -6,7 +6,7 @@ from pydantic import Field, field_validator
 
 from .common import CamelModel
 
-DocumentKind = Literal["brd", "frd"]
+DocumentKind = Literal["brd", "frd", "proposal", "deck"]
 DocumentStatus = Literal["draft", "in-review", "approved"]
 
 
@@ -47,6 +47,7 @@ class DocumentRead(DocumentSummary):
 class DocumentCreate(CamelModel):
     kind: DocumentKind
     title: str | None = Field(default=None, max_length=255)
+    template_id: str | None = Field(default=None, alias="templateId")
 
 
 class DocumentUpdate(CamelModel):

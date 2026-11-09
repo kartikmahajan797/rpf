@@ -1,4 +1,4 @@
-"""Builds BRD / FRD sections (markdown) from what the project already holds.
+"""Builds BRD / FRD / proposal / deck sections (markdown) from what the project already holds.
 
 Every section is plain data assembly: no AI involved, so the result is predictable and
 works without an LLM key. The analyst edits the text afterwards.
@@ -7,13 +7,16 @@ works without an LLM key. The analyst edits the text afterwards.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Any, Callable
 
 from sqlalchemy.orm import Session
 
-from ..models import AnalysisGap, BusinessAnalysis, Meeting, ProcessMap, Project, Requirement, SourceDocument, Stakeholder, TeamMember
+from ..models import (
+    AnalysisGap, BusinessAnalysis, Meeting, ProcessMap, Project, Requirement, SolutionComponent, SolutionDesign,
+    SourceDocument, Stakeholder, TeamMember,
+)
 
-KIND_LABEL = {"brd": "Business Requirements Document", "frd": "Functional Requirements Document"}
+KIND_LABEL = {"brd": "Business Requirements Document", "frd": "Functional Requirements Document", "proposal": "Client Proposal", "deck": "Presentation"}
 TYPE_LABEL = {
     "functional": "Functional",
     "non-functional": "Non-functional",
@@ -36,9 +39,15 @@ class ProjectContext:
     meetings: list[Meeting]
     sources: list[SourceDocument]
     gaps_by_req: dict[str, list[str]] = field(default_factory=dict)
+    design: SolutionDesign | None = None
+    components: list[SolutionComponent] = field(default_factory=list)
+    estimate: Any = None  # schemas.estimation.EstimationOverview
 
 
 def load_context(db: Session, project: Project) -> ProjectContext:
+    # Imported here because the estimation router itself depends on this package.
+    from ..routers.estimation import overview as estimation_overview
+
     pid = project.id
     requirements = db.query(Requirement).filter(Requirement.project_id == pid).order_by(Requirement.code).all()
     gaps = db.query(AnalysisGap).filter(AnalysisGap.project_id == pid).order_by(AnalysisGap.code).all()
@@ -52,6 +61,9 @@ def load_context(db: Session, project: Project) -> ProjectContext:
         processes=db.query(ProcessMap).filter(ProcessMap.project_id == pid).order_by(ProcessMap.kind, ProcessMap.name).all(),
         meetings=db.query(Meeting).filter(Meeting.project_id == pid).order_by(Meeting.started_at).all(),
         sources=db.query(SourceDocument).filter(SourceDocument.project_id == pid).order_by(SourceDocument.name).all(),
+        design=db.get(SolutionDesign, pid),
+        components=db.query(SolutionComponent).filter(SolutionComponent.project_id == pid).order_by(SolutionComponent.layer, SolutionComponent.name).all(),
+        estimate=estimation_overview(db, pid),
     )
     for gap in gaps:
         for rid in gap.requirement_ids or []:
@@ -298,6 +310,151 @@ def frd_assumptions(_: ProjectContext) -> str:
     ])
 
 
+# ─────────────────────────────── proposal sections ─────────────────────────
+
+MODEL_LABEL = {"tbd": "To be decided", "fixed-price": "Fixed price", "time-and-materials": "Time & materials", "milestone": "Milestone based"}
+PHASE_LABEL = {"discovery": "Discovery", "design": "Design", "build": "Build", "test": "Test", "deploy": "Deploy", "support": "Support"}
+
+
+def money(ctx: ProjectContext, value: float) -> str:
+    return f"{ctx.estimate.settings.currency} {value:,.2f}"
+
+
+def client_name(ctx: ProjectContext) -> str:
+    return (ctx.project.client or {}).get("name", "") or "the client"
+
+
+def design_text(ctx: ProjectContext, attr: str) -> str:
+    return (getattr(ctx.design, attr) or "").strip() if ctx.design else ""
+
+
+def has_price(ctx: ProjectContext) -> bool:
+    return bool(ctx.estimate.items)
+
+
+def price_table(ctx: ProjectContext) -> str:
+    s, t = ctx.estimate.settings, ctx.estimate.summary
+    return table(
+        ["Item", "Amount"],
+        [
+            ["Professional services", money(ctx, t.subtotal)],
+            [f"Contingency ({s.contingency_pct:g}%)", money(ctx, t.contingency_amount)],
+            [f"Discount ({s.discount_pct:g}%)", f"-{money(ctx, t.discount_amount)}"],
+            ["**Total**", f"**{money(ctx, t.total)}**"],
+        ],
+    )
+
+
+def prop_summary(ctx: ProjectContext) -> str:
+    parts = [ctx.project.description.strip() or todo("Summarise the engagement and the outcome it delivers.")]
+    rows = [["Client", client_name(ctx)], ["Requirements in scope", len(ctx.requirements)]]
+    if has_price(ctx):
+        t = ctx.estimate.summary
+        rows += [["Estimated effort", f"{t.total_days:g} days"], ["Minimum duration", f"{t.duration_weeks:g} weeks"], ["Investment", money(ctx, t.total)]]
+    return "\n\n".join(parts + [table(["Item", "Detail"], rows)])
+
+
+def prop_understanding(ctx: ProjectContext) -> str:
+    return "\n\n".join(["### Where you are today", brd_current(ctx), "### What you want to achieve", brd_objectives(ctx), "### Where you want to be", brd_future(ctx)])
+
+
+def prop_scope(ctx: ProjectContext) -> str:
+    rows = reqs_of(ctx, set(TYPE_LABEL))
+    in_scope = table(["ID", "Requirement", "Type", "Priority"], [[r.code, r.title, TYPE_LABEL.get(r.type, r.type), PRIORITY_LABEL.get(r.priority, r.priority)] for r in rows]) if rows else todo("No requirements captured yet.")
+    return "\n\n".join(["### In scope", in_scope, "### Out of scope", todo("List what this proposal explicitly does not cover.")])
+
+
+def prop_solution(ctx: ProjectContext) -> str:
+    parts = [design_text(ctx, "overview") or todo("Solution overview not written yet. Add it in Solution Design.")]
+    style = design_text(ctx, "architecture_style")
+    if style:
+        parts.append(f"**Architecture:** {style}")
+    if ctx.components:
+        parts.append(table(["Component", "Technology", "Build"], [[c.name, c.technology, "New" if c.is_new else "Existing"] for c in ctx.components]))
+    return "\n\n".join(parts)
+
+
+def prop_approach(ctx: ProjectContext) -> str:
+    parts = [design_text(ctx, "technical_approach") or todo("Delivery approach not written yet. Add it in Solution Design.")]
+    t = ctx.estimate.summary
+    if t.by_phase:
+        parts += ["### Delivery phases", table(["Phase", "Effort (days)"], [[PHASE_LABEL[p.phase], f"{p.days:g}"] for p in t.by_phase]), f"Minimum duration: {t.duration_weeks:g} weeks."]
+    return "\n\n".join(parts)
+
+
+def prop_team(ctx: ProjectContext) -> str:
+    if not ctx.estimate.roles:
+        return todo("No team defined yet. Add roles in Estimation & Pricing.")
+    return table(["Role", "Headcount"], [[r.name, r.headcount] for r in ctx.estimate.roles])
+
+
+def prop_commercials(ctx: ProjectContext) -> str:
+    if not has_price(ctx):
+        return todo("No estimate yet. Add effort items in Estimation & Pricing.")
+    parts = [f"**Commercial model:** {MODEL_LABEL[ctx.estimate.settings.commercial_model]}", price_table(ctx)]
+    if ctx.estimate.summary.unassigned_days:
+        parts.append(todo(f"{ctx.estimate.summary.unassigned_days:g} days have no role and are not priced. Assign roles before sending."))
+    return "\n\n".join(parts)
+
+
+def prop_assumptions(ctx: ProjectContext) -> str:
+    return ctx.estimate.settings.assumptions.strip() or todo("List what this price and timeline rely on. Add them in Estimation & Pricing.")
+
+
+def prop_next_steps(ctx: ProjectContext) -> str:
+    return "\n".join(["1. Review this proposal with your stakeholders.", "2. Confirm scope, commercial model and start date.", "3. Sign below so we can schedule kick-off.", "", table(["Name", "Role", "Signature", "Date"], [["", "", "", ""]])])
+
+
+# ─────────────────────────────── deck slides ───────────────────────────────
+
+
+def deck_overview(ctx: ProjectContext) -> str:
+    lines = [f"Client: {client_name(ctx)}", f"{len(ctx.requirements)} requirements captured", f"{len(ctx.stakeholders)} stakeholders engaged"]
+    return (ctx.project.description.strip() or todo("One-sentence summary of the engagement.")) + "\n\n" + bullets(lines)
+
+
+def deck_challenge(ctx: ProjectContext) -> str:
+    items = [f"{g.area}: {g.description or g.target}" for g in ctx.gaps if g.status != "closed"][:6]
+    return bullets(items) if items else brd_current(ctx)
+
+
+def deck_objectives(ctx: ProjectContext) -> str:
+    return brd_objectives(ctx)
+
+
+def deck_solution(ctx: ProjectContext) -> str:
+    items = [f"{c.name}" + (f" ({c.technology})" if c.technology else "") for c in ctx.components][:7]
+    head = design_text(ctx, "architecture_style") or design_text(ctx, "overview").split("\n")[0]
+    return "\n\n".join(x for x in [head or todo("Summarise the solution. Add it in Solution Design."), bullets(items) if items else ""] if x)
+
+
+def deck_scope(ctx: ProjectContext) -> str:
+    rows = reqs_of(ctx, set(TYPE_LABEL))
+    if not rows:
+        return todo("No requirements captured yet.")
+    lines = [f"{r.code}: {r.title}" for r in rows[:7]]
+    if len(rows) > 7:
+        lines.append(f"…and {len(rows) - 7} more")
+    return bullets(lines)
+
+
+def deck_timeline(ctx: ProjectContext) -> str:
+    t = ctx.estimate.summary
+    if not t.by_phase:
+        return todo("No estimate yet. Add effort items in Estimation & Pricing.")
+    return bullets([f"{PHASE_LABEL[p.phase]}: {p.days:g} days" for p in t.by_phase] + [f"Minimum duration: {t.duration_weeks:g} weeks", f"Team: {sum(r.headcount for r in ctx.estimate.roles)} people"])
+
+
+def deck_investment(ctx: ProjectContext) -> str:
+    if not has_price(ctx):
+        return todo("No estimate yet. Add effort items in Estimation & Pricing.")
+    return bullets([f"Commercial model: {MODEL_LABEL[ctx.estimate.settings.commercial_model]}", f"Total investment: {money(ctx, ctx.estimate.summary.total)}"])
+
+
+def deck_next_steps(_: ProjectContext) -> str:
+    return bullets(["Confirm scope and commercial model", "Agree start date and team", "Sign the proposal and schedule kick-off"])
+
+
 # key, title, builder
 TEMPLATES: dict[str, list[tuple[str, str, Callable[[ProjectContext], str]]]] = {
     "brd": [
@@ -324,6 +481,27 @@ TEMPLATES: dict[str, list[tuple[str, str, Callable[[ProjectContext], str]]]] = {
         ("open-questions", "Open questions", frd_open_questions),
         ("assumptions", "Assumptions & dependencies", frd_assumptions),
     ],
+    "proposal": [
+        ("summary", "Executive summary", prop_summary),
+        ("understanding", "Our understanding", prop_understanding),
+        ("scope", "Scope of work", prop_scope),
+        ("solution", "Proposed solution", prop_solution),
+        ("approach", "Delivery approach & timeline", prop_approach),
+        ("team", "Team", prop_team),
+        ("commercials", "Commercials", prop_commercials),
+        ("assumptions", "Assumptions", prop_assumptions),
+        ("next-steps", "Next steps & acceptance", prop_next_steps),
+    ],
+    "deck": [
+        ("overview", "Overview", deck_overview),
+        ("challenge", "The challenge", deck_challenge),
+        ("objectives", "Objectives", deck_objectives),
+        ("solution", "Proposed solution", deck_solution),
+        ("scope", "Scope", deck_scope),
+        ("timeline", "Timeline & team", deck_timeline),
+        ("investment", "Investment", deck_investment),
+        ("next-steps", "Next steps", deck_next_steps),
+    ],
 }
 
 
@@ -336,6 +514,18 @@ def build_section(ctx: ProjectContext, kind: str, key: str) -> dict | None:
         if k == key:
             return {"key": k, "title": title, "body": build(ctx)}
     return None
+
+
+def sections_from_template(ctx: ProjectContext, kind: str, sections: list[dict]) -> list[dict]:
+    """Follow a saved template. A blank section with a standard key is filled from project data."""
+    out = []
+    for section in sections:
+        body = section.get("body", "")
+        if not body.strip():
+            fresh = build_section(ctx, kind, section["key"])
+            body = fresh["body"] if fresh else ""
+        out.append({"key": section["key"], "title": section["title"], "body": body})
+    return out
 
 
 def to_markdown(doc, project: Project) -> str:

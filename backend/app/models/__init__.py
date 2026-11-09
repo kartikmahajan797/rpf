@@ -1,4 +1,9 @@
 from .project import (
+    DocumentTemplate,
+    ProjectHandoff,
+    EstimateItem,
+    EstimateRole,
+    EstimationSettings,
     DesignDecision,
     Integration,
     SolutionComponent,
@@ -21,6 +26,11 @@ from .project import (
 )
 
 __all__ = [
+    "DocumentTemplate",
+    "ProjectHandoff",
+    "EstimateItem",
+    "EstimateRole",
+    "EstimationSettings",
     "DesignDecision",
     "Integration",
     "SolutionComponent",
