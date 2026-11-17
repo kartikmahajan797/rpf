@@ -1,12 +1,12 @@
-# Project ko test kaise karein
+# How to test the project
 
-Ye guide batati hai ki app kaise chalana hai aur har module ko step by step kaise test karna hai.
+This guide explains how to run the app and test each module step by step.
 
-> **Abhi kya nahi bana:** Login, team invitations aur roles. App abhi bina login ke chalta hai.
+> **Not built yet:** Login, team invitations, and roles. The app currently works without login.
 
-## 1. App start karo
+## 1. Start the app
 
-**Pehli baar setup** (project ke main folder se):
+**First-time setup** (from the project root folder):
 
 ```bash
 python3 -m venv .venv
@@ -15,7 +15,7 @@ pip install -r backend/requirements.txt
 cd frontend && npm install && cd ..
 ```
 
-**Har baar chalane ke liye, do alag terminal kholo:**
+**To run it each time, open two separate terminals:**
 
 Terminal 1 (backend):
 
@@ -32,11 +32,11 @@ cd frontend
 npm run dev
 ```
 
-Browser mein kholo: http://localhost:3000
+Open this in the browser: http://localhost:3000
 
-> **Dhyan rakho:** Settings page ke **Clear all projects** aur **Restore sample data** buttons tumhara banaya hua data delete kar dete hain.
+> **Important:** The **Clear all projects** and **Restore sample data** buttons on the Settings page will delete the data you created.
 
-## 2. Automatic tests
+## 2. Automated tests
 
 ```bash
 source .venv/bin/activate
@@ -44,49 +44,49 @@ cd backend
 python -m pytest -q
 ```
 
-Sab tests pass hone chahiye. Ye temporary database use karte hain, tumhara data nahi chhedte. Ye sirf backend check karte hain; screens tumhe neeche ke steps se haath se test karni hain.
+All tests should pass. These use a temporary database, so they do not affect your data. They only check the backend; the screens below must be tested manually.
 
-## 3. Poora workflow test karo
+## 3. Test the full workflow
 
-Ek naya project banao aur neeche ke steps isi order mein karo, kyunki aage ke modules pichhle modules ka data use karte hain.
+Create a new project and follow the steps below in this order, because later modules use data from earlier ones.
 
 ### Step 1: Requirements
 
-1. **Requirements** kholo aur 2-3 requirements add karo.
-2. Har requirement ko validate karo, phir approve karo.
+1. Open **Requirements** and add 2-3 requirements.
+2. Validate each requirement, then approve it.
 
-**Expected:** code `REQ-001`, `REQ-002` aise bante hain aur status Approved ho jata hai.
+**Expected:** codes such as `REQ-001`, `REQ-002` are created and the status becomes Approved.
 
 ### Step 2: Business Analysis
 
-Current state, future state, objectives, ek gap aur ek stakeholder add karo.
+Add the current state, future state, objectives, one gap, and one stakeholder.
 
-**Expected:** refresh karne ke baad bhi data dikhta hai.
+**Expected:** the data remains visible even after refresh.
 
 ### Step 3: BRD / FRD
 
-1. Ek BRD aur ek FRD generate karo.
-2. Dono ko submit for review karo, phir approve karo.
+1. Generate one BRD and one FRD.
+2. Submit both for review, then approve them.
 
-**Expected:** requirements aur analysis ka data documents mein apne aap aa jata hai.
+**Expected:** the requirements and analysis data are automatically populated in the documents.
 
 ### Step 4: User Stories
 
-Story banao, use requirement se link karo, acceptance criteria likho aur 5 story points do. Story points sirf 1, 2, 3, 5, 8, 13 ya 21 ho sakte hain.
+Create a story, link it to a requirement, write acceptance criteria, and assign 5 story points. Story points can only be 1, 2, 3, 5, 8, 13, or 21.
 
 ### Step 5: Solution Design
 
-1. Overview aur build approach likho.
-2. Ek component add karo aur use requirement se link karo.
+1. Write the overview and build approach.
+2. Add one component and link it to a requirement.
 
 ### Step 6: Estimation & Pricing
 
-Is example ko use karo, taaki total match kar sako:
+Use this example to make sure the total matches:
 
-1. **Team & rates** mein do roles add karo: Developer (day rate 500) aur QA (day rate 300).
-2. **Effort** mein item add karo: role Developer, days 2 / 4 / 12.
-3. Dusra item add karo: role QA, phase Test, days 5 / 5 / 5.
-4. **Pricing** mein contingency 10% aur discount 5% rakho, phir save karo.
+1. In **Team & rates**, add two roles: Developer (day rate 500) and QA (day rate 300).
+2. In **Effort**, add one item with role Developer and days 2 / 4 / 12.
+3. Add another item with role QA, phase Test, and days 5 / 5 / 5.
+4. In **Pricing**, set contingency to 10% and discount to 5%, then save.
 
 | Check | Expected |
 |---|---|
@@ -98,64 +98,64 @@ Is example ko use karo, taaki total match kar sako:
 | **Total price** | **4,180** |
 | Minimum duration | 1 week |
 
-Phir **From user stories** dabao aur naye item ko ek role assign karo. 5 points wali story ke liye days 3.75 / 5 / 7.5 aane chahiye. Is button se total badal jayega, isliye upar ka table isse pehle check karna.
+Then click **From user stories** and assign a role to the new item. For a 5-point story, the values should be 3.75 / 5 / 7.5. This button changes the total, so check the table above before doing this.
 
-**Galat input bhi try karo:** optimistic 5 aur most likely 1 daalne par error aana chahiye.
+**Also try invalid input:** if you enter optimistic = 5 and most likely = 1, an error should appear.
 
 ### Step 7: Proposals
 
-1. **New proposal** dabao.
-2. Check karo ki scope, solution, team aur price apne aap bhar gaye.
-3. Edit karke save karo, review ke liye submit karo aur approve karo.
-4. **PDF** download karke kholo.
+1. Click **New proposal**.
+2. Check that scope, solution, team, and price are auto-filled.
+3. Edit and save it, then submit it for review and approve it.
+4. Download and open the **PDF**.
 
 ### Step 8: Presentations
 
-**New presentation** banao, phir **PowerPoint** aur **PDF** download karke kholo.
+Create a **New presentation**, then download both the **PowerPoint** and **PDF** and open them.
 
-**Expected:** har section ki slide banti hai. 7 se zyada points hon to "(continued)" slide banti hai.
+**Expected:** each section creates a slide. If there are more than 7 points, a "(continued)" slide is created.
 
 ### Step 9: Traceability
 
-**Expected:** jo requirement poori linked hai usme "Missing" nahi dikhta. Bina story, design ya estimate wali requirement mein "Missing" dikhta hai.
+**Expected:** requirements that are fully linked should not show "Missing". Requirements without a story, design, or estimate should show "Missing".
 
-1. **Incomplete** tab par click karo.
-2. **View impact** kholo aur linked items aur cost dekho.
-3. **CSV** download karo.
+1. Click the **Incomplete** tab.
+2. Open **View impact** and review the linked items and cost.
+3. Download the **CSV**.
 
 ### Step 10: Templates
 
-1. Sidebar se **Templates** kholo aur **New template** banao.
-2. Ek section mein apna text likho aur ek section khaali chhodo.
-3. Kisi project mein naya document banate waqt ye template chuno.
+1. Open **Templates** from the sidebar and create a **New template**.
+2. Write text in one section and leave another section blank.
+3. When creating a new document in a project, choose this template.
 
-**Expected:** likha hua text waisa hi rehta hai aur khaali standard section project ke data se bhar jata hai.
+**Expected:** the written content remains as-is, while the blank standard section is filled with project data.
 
-Document editor mein **Save as template** bhi try karo.
+Also try **Save as template** in the document editor.
 
 ### Step 11: Delivery Handoff
 
-1. Delivery lead, start date aur notes save karo.
-2. **Download package** se zip lo.
-3. Saare Required checks Done hone par **Mark as handed off** dabao.
+1. Save the delivery lead, start date, and notes.
+2. Download the zip using **Download package**.
+3. Once all required checks are marked Done, click **Mark as handed off**.
 
-**Expected:** Required checks poore hone se pehle button disabled rehta hai. Zip mein documents, backlog, solution design, estimate aur traceability file hoti hai.
+**Expected:** the button remains disabled until all required checks are complete. The zip contains the documents, backlog, solution design, estimate, and traceability files.
 
 ## 4. Optional features
 
-| Feature | Kya chahiye |
+| Feature | Requirement |
 |---|---|
-| **Draft with AI** aur baaki AI buttons | `backend/.env` mein `LLM_PROVIDER` aur `LLM_API_KEY`, aur us provider ka SDK install. Details: `backend/README.md` |
-| Meeting recording | Microphone ka access |
+| **Draft with AI** and other AI buttons | Set `LLM_PROVIDER` and `LLM_API_KEY` in `backend/.env`, and install the SDK for that provider. Details: `backend/README.md` |
+| Meeting recording | Microphone access |
 
-## 5. Pata hai, ye limit hai
+## 5. Known limitations
 
-- PDF mein Hindi jaisi non-Latin language ka text sahi print nahi hota.
-- Estimation mein abhi "Draft with AI" button nahi hai.
+- PDF export does not correctly print non-Latin text such as Hindi.
+- Estimation does not yet include a "Draft with AI" button.
 
-## 6. Bug mile to kya note karein
+## 6. What to note when you find a bug
 
-- Kis screen par aaya
-- Kya click kiya
-- Kya hona chahiye tha aur kya hua
-- Browser Console (F12) ya backend terminal ka error
+- Which screen it happened on
+- What you clicked
+- What was expected and what actually happened
+- The browser console error (F12) or backend terminal error
